@@ -9,5 +9,6 @@ public class Module {
     @Column(nullable=false) private String nom;
     @Column(nullable=false) private String niveau;
     @Column(name="nombre_heures", nullable=false) @Builder.Default private Integer nombreHeures=0;
+    @Column private String salle;
     @ManyToOne(fetch=FetchType.EAGER) @JoinColumn(name="professeur_id") private Professeur professeur;
 }

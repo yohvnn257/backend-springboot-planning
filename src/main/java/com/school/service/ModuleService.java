@@ -19,13 +19,13 @@ public class ModuleService {
     public List<Module> findByProfesseur(Long id){return repo.findByProfesseurId(id);}
     @Transactional
     public Module create(ModuleRequest r){
-        Module m=Module.builder().nom(r.getNom()).niveau(r.getNiveau()).nombreHeures(r.getNombreHeures()!=null?r.getNombreHeures():0).build();
+        Module m=Module.builder().nom(r.getNom()).niveau(r.getNiveau()).nombreHeures(r.getNombreHeures()!=null?r.getNombreHeures():0).salle(r.getSalle()).build();
         if(r.getProfesseurId()!=null) m.setProfesseur(profRepo.findById(r.getProfesseurId()).orElseThrow(()->new ResourceNotFoundException("Professeur",r.getProfesseurId())));
         return repo.save(m);
     }
     @Transactional
     public Module update(Long id, ModuleRequest r){
-        Module m=findById(id);m.setNom(r.getNom());m.setNiveau(r.getNiveau());if(r.getNombreHeures()!=null)m.setNombreHeures(r.getNombreHeures());
+        Module m=findById(id);m.setNom(r.getNom());m.setNiveau(r.getNiveau());if(r.getNombreHeures()!=null)m.setNombreHeures(r.getNombreHeures());m.setSalle(r.getSalle());
         m.setProfesseur(r.getProfesseurId()!=null?profRepo.findById(r.getProfesseurId()).orElseThrow(()->new ResourceNotFoundException("Professeur",r.getProfesseurId())):null);
         return repo.save(m);
     }

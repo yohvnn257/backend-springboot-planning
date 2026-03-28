@@ -48,6 +48,17 @@ public class EmploiDuTempsService {
         }catch(Exception e){throw new RuntimeException("Erreur génération: "+e.getMessage());}
     }
     @Transactional
+    public EmploiDuTemps update(Long id, Map<String,Object> body){
+        EmploiDuTemps edt=edtRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("EDT",id));
+        if(body.containsKey("filiere")) edt.setFiliere((String)body.get("filiere"));
+        if(body.containsKey("niveau")) edt.setNiveau((String)body.get("niveau"));
+        if(body.containsKey("semaineDu")) edt.setSemaineDu(LocalDate.parse((String)body.get("semaineDu")));
+        if(body.containsKey("semaineAu")) edt.setSemaineAu(LocalDate.parse((String)body.get("semaineAu")));
+        if(body.containsKey("statut")) edt.setStatut((String)body.get("statut"));
+        if(body.containsKey("creneauxJson")) edt.setCreneauxJson((String)body.get("creneauxJson"));
+        return edtRepo.save(edt);
+    }
+    @Transactional
     public Map<String,Object> envoyer(Long id){
         EmploiDuTemps edt=edtRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("EDT",id));
         List<String> emails=etudRepo.findByFiliereAndNiveau(edt.getFiliere(),edt.getNiveau()).stream().map(Etudiant::getEmail).toList();
