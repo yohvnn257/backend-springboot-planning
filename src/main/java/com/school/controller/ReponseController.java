@@ -21,6 +21,8 @@ public class ReponseController {
         Optional<Professeur> opt=profRepo.findByResponseToken(token);
         if(opt.isEmpty()) return ResponseEntity.status(404).body(Map.of("valide",false,"message","Lien invalide"));
         Professeur p=opt.get();
+        if("REPONDU".equals(p.getWhatsappStatut()))
+            return ResponseEntity.status(410).body(Map.of("valide",false,"message","Ce lien a déjà été utilisé."));
         if(p.getTokenExpireAt()!=null&&p.getTokenExpireAt().isBefore(LocalDateTime.now()))
             return ResponseEntity.status(410).body(Map.of("valide",false,"message","Lien expiré. Contactez la secrétaire."));
         List<String> mods=moduleRepo.findNomsByProfesseurId(p.getId());

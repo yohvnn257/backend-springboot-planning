@@ -25,7 +25,7 @@ public class EmploiDuTempsService {
     @Transactional
     public Map<String,Object> generer(String filiere,String niveau,LocalDate du,LocalDate au){
         List<Disponibilite> dispos=dispoRepo.findByFiliereAndNiveauAndJourBetween(filiere,niveau,du,au);
-        if(dispos.isEmpty()) throw new IllegalArgumentException("Aucune disponibilité pour "+filiere+" "+niveau);
+        if(dispos.isEmpty()) throw new IllegalArgumentException("Aucune disponibilité trouvée pour ce niveau et cette filière.");
         List<Map<String,Object>> creneaux=new ArrayList<>();
         for(Disponibilite d:dispos){
             List<String> mods=moduleRepo.findNomsByProfesseurId(d.getProfesseur().getId());
@@ -34,9 +34,11 @@ public class EmploiDuTempsService {
             c.put("jourNom",getNomJour(d.getJour().getDayOfWeek().getValue()));
             c.put("heureDebut",d.getHeureDebut().toString());
             c.put("heureFin",d.getHeureFin().toString());
-            c.put("matiere",mods.isEmpty()?d.getProfesseur().getMatiere():mods.get(0));
+            c.put("module",mods.isEmpty()?d.getProfesseur().getMatiere():mods.get(0));
             c.put("professeur",d.getProfesseur().getNom());
             c.put("salle",d.getSalle()!=null?d.getSalle():"");
+            c.put("filiere",d.getFiliere());
+            c.put("niveau",d.getNiveau());
             creneaux.add(c);
         }
         creneaux.sort(Comparator.comparing(c->c.get("jour").toString()+c.get("heureDebut")));
