@@ -13,7 +13,7 @@ public class IaController {
     private final ClaudeService claudeService;
     private final DisponibiliteRepository dispoRepo;
     @Value("${anthropic.api.key:}") private String apiKey;
-    @Value("${anthropic.model:claude-sonnet-4-20250514}") private String model;
+    @Value("${anthropic.model:claude-sonnet-4-6}") private String model;
 
     @GetMapping("/statut")
     public ResponseEntity<Map<String,Object>> statut() {
