@@ -34,6 +34,12 @@ public class EmailService {
             m.put("email",p.getEmail());
             m.put("whatsappNumero",p.getEmail());
             m.put("whatsappStatut",Optional.ofNullable(p.getWhatsappStatut()).orElse("ATTENTE"));
+            m.put("telephone", p.getTelephone());
+            m.put("lienReponse",
+                p.getResponseToken() != null
+                ? frontendUrl + "/repondre/" + p.getResponseToken()
+                : null
+            );
             m.put("modules",moduleRepo.findNomsByProfesseurId(p.getId()));
             List<Disponibilite> d=dispoRepo.findByProfesseurId(p.getId());
             if(!d.isEmpty()){m.put("filiere",d.get(d.size()-1).getFiliere());m.put("niveau",d.get(d.size()-1).getNiveau());}
