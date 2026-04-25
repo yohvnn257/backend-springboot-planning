@@ -1,4 +1,5 @@
 package com.school.exception;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +16,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(Map.of("erreur",e.getMessage(),"status",400,"timestamp",LocalDateTime.now().toString()));
     }
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String,Object>> general(Exception e) {
-        log.error("Erreur interne",e);
-        return ResponseEntity.status(500).body(Map.of("erreur","Erreur interne. Consultez les logs.","status",500,"timestamp",LocalDateTime.now().toString()));
+    public ResponseEntity<Map<String,Object>> general(Exception e, HttpServletRequest req) {
+        log.error("Erreur interne sur [{} {}] — {}: {}",
+            req.getMethod(), req.getRequestURI(), e.getClass().getSimpleName(), e.getMessage(), e);
+        return ResponseEntity.status(500).body(Map.of(
+            "erreur","Erreur interne. Consultez les logs.",
+            "status",500,
+            "path",req.getRequestURI(),
+            "exception",e.getClass().getSimpleName(),
+            "timestamp",LocalDateTime.now().toString()));
     }
 }
