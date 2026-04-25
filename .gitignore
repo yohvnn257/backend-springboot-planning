@@ -10,3 +10,5 @@ out/
 .env
 .env.*
 !.env.example
+# Frontend Angular = repo séparé (déployé sur Vercel)
+frontend-angular-planning/

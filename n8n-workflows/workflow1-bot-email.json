@@ -1,0 +1,111 @@
+{
+  "name": "EduSchedule — 1. Bot Email + WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 7, "triggerAtMinute": 0 }]
+        }
+      },
+      "id": "cron-lundi",
+      "name": "Cron — Lundi 7h00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [180, 260]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-trigger",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-dashboard",
+      "name": "Webhook — Dashboard",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 460]
+    },
+    {
+      "parameters": {
+        "url": "https://backend-springboot-planning.onrender.com/api/webhook/preparer-envoi",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "preparer-envoi",
+      "name": "Préparer envoi (Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 360]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "professeurs",
+        "options": {}
+      },
+      "id": "split-profs",
+      "name": "Split par professeur",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [640, 360]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=📅 EduSchedule — Vos disponibilités — semaine prochaine",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Arial,sans-serif;background:#F1F5F9;padding:24px;'><div style='max-width:520px;margin:0 auto;'><div style='background:#1E1B4B;padding:20px;border-radius:12px 12px 0 0;text-align:center;'><h1 style='color:white;margin:0;font-size:20px;'>📅 EduSchedule</h1><p style='color:#A5B4FC;margin:4px 0 0;font-size:12px;'>Institut Supérieur du Digital</p></div><div style='background:white;padding:24px;border-radius:0 0 12px 12px;'><p style='color:#1F2937;'>Bonjour <strong>{{ $json.nom }}</strong> 👋</p><p style='color:#4B5563;'>Merci de saisir vos <strong>disponibilités pour la semaine prochaine</strong>.</p><p style='color:#4B5563;'>Modules : <strong>{{ $json.modules ? $json.modules.join(', ') : $json.matiere }}</strong></p><div style='text-align:center;margin:28px 0;'><a href='{{ $json.lienReponse }}' style='background:#4338CA;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;'>✏️ Saisir mes disponibilités</a></div><p style='color:#9CA3AF;font-size:11px;text-align:center;'>Lien personnel valide 7 jours — ne pas partager.</p></div></div></body></html>",
+        "options": {}
+      },
+      "id": "envoyer-email",
+      "name": "Envoyer Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [860, 240]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "from": "whatsapp:+14155238886",
+        "to": "=whatsapp:+{{ $json.telephone ? $json.telephone.replace(/[^0-9]/g, '') : '' }}",
+        "message": "=📅 *EduSchedule — ISD*\n\nBonjour *{{ $json.nom }}* 👋\n\nVeuillez saisir vos disponibilités pour la semaine prochaine.\n\n📚 *Modules :* {{ $json.modules ? $json.modules.join(', ') : $json.matiere }}\n\n🔗 {{ $json.lienReponse }}\n\n_Lien valide 7 jours — Institut Supérieur du Digital_"
+      },
+      "id": "twilio-whatsapp",
+      "name": "WhatsApp Twilio",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [860, 480],
+      "credentials": { "twilioApi": { "id": "twilio-cred", "name": "Twilio Sandbox" } }
+    },
+    {
+      "parameters": {
+        "url": "=https://backend-springboot-planning.onrender.com/api/professeurs/{{ $json.id }}/whatsapp-statut",
+        "method": "PATCH",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\"statut\": \"ENVOYE\"}",
+        "options": {}
+      },
+      "id": "marquer-envoye",
+      "name": "Marquer ENVOYE (Render)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1080, 360]
+    }
+  ],
+  "connections": {
+    "Cron — Lundi 7h00":     { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
+    "Webhook — Dashboard":   { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
+    "Préparer envoi (Render)": { "main": [[{ "node": "Split par professeur", "type": "main", "index": 0 }]] },
+    "Split par professeur":  { "main": [[
+      { "node": "Envoyer Email",   "type": "main", "index": 0 },
+      { "node": "WhatsApp Twilio", "type": "main", "index": 0 }
+    ]]},
+    "Envoyer Email":         { "main": [[{ "node": "Marquer ENVOYE (Render)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
+  "tags": [{ "name": "eduschedule" }, { "name": "email" }, { "name": "whatsapp" }]
+}

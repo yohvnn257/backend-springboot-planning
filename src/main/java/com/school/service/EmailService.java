@@ -32,7 +32,7 @@ public class EmailService {
             m.put("id",p.getId()); m.put("nom",p.getNom());
             m.put("matiere",p.getMatiere());
             m.put("email",p.getEmail());
-            m.put("whatsappNumero",p.getEmail());
+            m.put("whatsappNumero",p.getTelephone());
             m.put("whatsappStatut",Optional.ofNullable(p.getWhatsappStatut()).orElse("ATTENTE"));
             m.put("telephone", p.getTelephone());
             m.put("lienReponse",
@@ -48,9 +48,9 @@ public class EmailService {
         }).toList();
     }
 
-    // Étape 1 : sauvegarde DB (transaction courte)
+    // Étape 1 : sauvegarde DB (transaction courte). Public pour appel direct depuis n8n.
     @Transactional
-    protected List<Map<String,Object>> preparerTokens() {
+    public List<Map<String,Object>> preparerTokens() {
         List<Professeur> profs = profRepo.findAll();
         profs.forEach(p->{
             p.setWhatsappStatut("ATTENTE");
@@ -64,6 +64,7 @@ public class EmailService {
             m.put("id",p.getId()); m.put("nom",p.getNom());
             m.put("matiere",mods.isEmpty()?p.getMatiere():String.join(", ",mods));
             m.put("modules",mods); m.put("email",p.getEmail());
+            m.put("telephone",p.getTelephone());
             m.put("lienReponse",frontendUrl+"/repondre/"+p.getResponseToken());
             return m;
         }).toList();

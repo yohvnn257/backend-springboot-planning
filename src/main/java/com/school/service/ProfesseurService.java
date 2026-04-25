@@ -26,12 +26,23 @@ public class ProfesseurService {
     @Transactional
     public Professeur create(ProfesseurRequest r){
         if(repo.existsByEmail(r.getEmail())) throw new IllegalArgumentException("Email déjà utilisé: "+r.getEmail());
-        return repo.save(Professeur.builder().nom(r.getNom()).matiere(r.getMatiere()!=null?r.getMatiere():"").email(r.getEmail()).telephone(r.getTelephone()).build());
+        return repo.save(Professeur.builder().nom(r.getNom()).matiere(r.getMatiere()!=null?r.getMatiere():"").email(r.getEmail()).telephone(normaliserTelephone(r.getTelephone())).build());
     }
     @Transactional
     public Professeur update(Long id, ProfesseurRequest r){
         Professeur p=findById(id);p.setNom(r.getNom());if(r.getMatiere()!=null)p.setMatiere(r.getMatiere());
-        p.setEmail(r.getEmail());p.setTelephone(r.getTelephone());return repo.save(p);
+        p.setEmail(r.getEmail());p.setTelephone(normaliserTelephone(r.getTelephone()));return repo.save(p);
+    }
+    // Normalise vers E.164 (requis par Twilio). Default : Côte d'Ivoire (+225) si numéro local 10 chiffres.
+    static String normaliserTelephone(String tel){
+        if(tel==null||tel.isBlank()) return tel;
+        String t=tel.trim();
+        if(t.startsWith("+")) return "+"+t.substring(1).replaceAll("[^0-9]","");
+        String chiffres=t.replaceAll("[^0-9]","");
+        if(chiffres.length()==10&&chiffres.startsWith("0")) return "+225"+chiffres.substring(1);
+        if(chiffres.length()==12&&chiffres.startsWith("225")) return "+"+chiffres;
+        if(chiffres.length()==9) return "+225"+chiffres;
+        return chiffres.isEmpty()?null:"+"+chiffres;
     }
     @Transactional public void delete(Long id){repo.delete(findById(id));}
     @Transactional public Professeur updateStatut(Long id, String s){Professeur p=findById(id);p.setWhatsappStatut(s);return repo.save(p);}

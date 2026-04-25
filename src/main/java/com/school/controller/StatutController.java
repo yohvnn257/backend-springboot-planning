@@ -19,14 +19,18 @@ public class StatutController {
     public ResponseEntity<Map<String,Object>> statut() {
         long total=profRepo.count();
         long repondus=profRepo.findAll().stream().filter(p->"REPONDU".equals(p.getWhatsappStatut())).count();
-        return ResponseEntity.ok(Map.of(
-            "backend","UP","version","1.0.0",
-            "totalProfesseurs",total,"totalEtudiants",etudRepo.count(),
-            "totalModules",moduleRepo.count(),"totalDisponibilites",dispoRepo.count(),
-            "totalEdts",edtRepo.count(),"profsRepondus",repondus,
-            "profsEnAttente",total-repondus,
-            "tauxReponse",total>0?Math.round((repondus*100.0)/total):0,
-            "iaActive",apiKey!=null&&!apiKey.isBlank()
+        return ResponseEntity.ok(Map.ofEntries(
+            Map.entry("backend","UP"),
+            Map.entry("version","1.0.0"),
+            Map.entry("totalProfesseurs",total),
+            Map.entry("totalEtudiants",etudRepo.count()),
+            Map.entry("totalModules",moduleRepo.count()),
+            Map.entry("totalDisponibilites",dispoRepo.count()),
+            Map.entry("totalEdts",edtRepo.count()),
+            Map.entry("profsRepondus",repondus),
+            Map.entry("profsEnAttente",total-repondus),
+            Map.entry("tauxReponse",total>0?Math.round((repondus*100.0)/total):0),
+            Map.entry("iaActive",apiKey!=null&&!apiKey.isBlank())
         ));
     }
 }
