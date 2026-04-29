@@ -13,7 +13,7 @@ public class StatutController {
     private final ModuleRepository moduleRepo;
     private final DisponibiliteRepository dispoRepo;
     private final EmploiDuTempsRepository edtRepo;
-    @Value("${anthropic.api.key:}") private String apiKey;
+    @Value("${gemini.api.key:}") private String apiKey;
 
     @GetMapping("/statut")
     public ResponseEntity<Map<String,Object>> statut() {
@@ -30,7 +30,8 @@ public class StatutController {
             Map.entry("profsRepondus",repondus),
             Map.entry("profsEnAttente",total-repondus),
             Map.entry("tauxReponse",total>0?Math.round((repondus*100.0)/total):0),
-            Map.entry("iaActive",apiKey!=null&&!apiKey.isBlank())
+            Map.entry("iaActive",apiKey!=null&&!apiKey.isBlank()),
+            Map.entry("iaProvider","Gemini 2.5 Flash")
         ));
     }
 }

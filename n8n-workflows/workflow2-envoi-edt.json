@@ -1,5 +1,5 @@
 {
-  "name": "EduSchedule — 2. Envoi EDT (Claude via backend)",
+  "name": "EduSchedule — 2. Envoi EDT (Gemini 2.5 Flash via backend)",
   "nodes": [
     {
       "parameters": {
@@ -41,11 +41,11 @@
         "method": "POST",
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({ filiere: $json.filiere, niveau: $json.niveau, creneaux: $json.creneaux }) }}",
+        "body": "={{ JSON.stringify({ filiere: $json.filiere, niveau: $json.niveau, semaineDu: $json.semaineDu, semaineAu: $json.semaineAu, creneaux: $json.creneaux }) }}",
         "options": { "timeout": 60000 }
       },
-      "id": "claude-backend",
-      "name": "Claude IA (via backend)",
+      "id": "gemini-backend",
+      "name": "Gemini 2.5 Flash (via backend)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [580, 360]
@@ -62,7 +62,8 @@
             { "id": "g6", "name": "destinataires",  "value": "={{ $('Préparer les données').item.json.destinataires }}",  "type": "array" },
             { "id": "g7", "name": "creneaux",       "value": "={{ $json.creneauxOptimises ?? $('Préparer les données').item.json.creneaux }}", "type": "array" },
             { "id": "g8", "name": "suggestions",    "value": "={{ $json.suggestions ?? '' }}", "type": "string" },
-            { "id": "g9", "name": "iaActive",       "value": "={{ $json.iaActive ?? false }}", "type": "boolean" }
+            { "id": "g9", "name": "iaActive",       "value": "={{ $json.iaActive ?? false }}", "type": "boolean" },
+            { "id": "g10", "name": "edtTemplate",   "value": "={{ $json.edtTemplate ?? null }}", "type": "object" }
           ]
         },
         "options": {}
@@ -76,7 +77,7 @@
     {
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const data = $input.first().json;\nconst creneaux = data.creneaux || [];\n\nfunction fmtDate(s) {\n  const d = new Date(s);\n  if(isNaN(d)) return s;\n  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});\n}\nfunction getDayNum(s){return new Date(s).getDay();}\nfunction getSemaineDates(s){\n  const base=new Date(s),dates={};\n  for(let i=0;i<5;i++){const d=new Date(base);d.setDate(base.getDate()+i);dates[i+1]=fmtDate(d.toISOString().split('T')[0]);}\n  return dates;\n}\n\nconst dates=getSemaineDates(data.semaineDu);\nconst HORAIRES=[{d:'08:00',l:'08H-10H'},{d:'10:00',l:'10H-12H'},{d:'13:00',l:'13H-15H'},{d:'15:00',l:'15H-17H'}];\nconst JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];\n\nfunction getCreneau(day,heure){\n  return creneaux.find(c=>getDayNum(c.jour)===day && (c.heureDebut||'').substring(0,5)===heure);\n}\nfunction cell(day,heure){\n  const c=getCreneau(day,heure);\n  if(!c) return `<td style=\"border:1px solid #000;height:90px;\"></td>`;\n  return `<td style=\"border:1px solid #000;padding:6px;height:90px;vertical-align:top;\">\n    <span style=\"background:#FFFF00;font-weight:bold;font-size:11px;display:block;padding:1px 3px;\">${c.module||c.matiere||''}</span>\n    <span style=\"background:#FFFF00;font-size:11px;display:block;padding:1px 3px;\">${c.salle?'Salle '+c.salle:''}</span>\n    <span style=\"font-size:11px;display:block;\">${c.professeur||''}</span>\n  </td>`;\n}\n\nconst headerCells=JOURS.map((j,i)=>`<th style=\"border:1px solid #000;padding:5px;font-size:11px;text-align:left;\">${j}<br><span style=\"font-weight:normal;\">${dates[i+1]||''}</span></th>`).join('');\n\nconst lignes=HORAIRES.map((h,i)=>{\n  const sep=i===2?`<tr><td colspan=\"6\" style=\"background:#4472C4;height:14px;border:none;\"></td></tr>`:'';\n  return `${sep}<tr><td style=\"border:1px solid #000;color:#C00000;font-weight:bold;font-size:11px;text-align:center;vertical-align:middle;width:65px;\">${h.l}</td>${[1,2,3,4,5].map(d=>cell(d,h.d)).join('')}</tr>`;\n}).join('');\n\nconst iaBanner = data.iaActive && data.suggestions\n  ? `<div style=\"background:#EEF2FF;border-left:4px solid #4338CA;padding:10px 14px;margin-bottom:16px;border-radius:0 6px 6px 0;\"><strong style=\"color:#4338CA;font-size:12px;\">🤖 Optimisé par Claude IA (Anthropic)</strong><p style=\"color:#374151;font-size:11px;margin:4px 0 0;\">${data.suggestions}</p></div>` : '';\n\nconst html=`<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;padding:28px;background:#fff;color:#000;}table{border-collapse:collapse;width:100%;}</style></head><body>\n<div style=\"display:flex;align-items:flex-start;margin-bottom:20px;\"><div style=\"border:2px solid #1E3A5F;padding:8px 12px;border-radius:6px;\"><div style=\"font-weight:900;font-size:12px;color:#1E3A5F;line-height:1.5;\">Institut<br>Supérieur<br><span style=\"text-decoration:underline;\">du Digital®</span></div></div></div>\n${iaBanner}\n<div style=\"text-align:center;font-weight:bold;font-size:15px;text-decoration:underline;text-transform:uppercase;margin-bottom:5px;\">EMPLOI DU TEMPS (${fmtDate(data.semaineDu)} - ${fmtDate(data.semaineAu)})</div>\n<div style=\"text-align:center;font-size:13px;text-decoration:underline;text-transform:uppercase;margin-bottom:18px;\">${data.niveau} : ${data.filiere}</div>\n<table><thead><tr><th style=\"border:1px solid #000;padding:5px;font-size:11px;width:65px;\">Heures</th>${headerCells}</tr></thead><tbody>${lignes}</tbody></table>\n<p style=\"color:#C00000;font-style:italic;font-weight:bold;text-decoration:underline;margin-top:18px;font-size:12px;\">NB : L'emploi du temps n'est pas définitif il peut toujours subir des modifications.</p>\n</body></html>`;\n\nreturn [{json:{...data,htmlEmail:html}}];"
+        "jsCode": "const data = $input.first().json;\nconst t = data.edtTemplate || {};\n\nfunction esc(v){\n  return String(v ?? '')\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\"', '&quot;')\n    .replaceAll(\"'\", '&#39;');\n}\n\nconst colonnes = Array.isArray(t.colonnes) && t.colonnes.length === 6\n  ? t.colonnes\n  : ['Heures','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];\nconst lignes = Array.isArray(t.lignes) ? t.lignes : [];\nconst separateurs = new Set(Array.isArray(t.separateurs) ? t.separateurs : [2]);\n\nfunction renderCell(cell){\n  if (!cell || cell.type === 'skip') return '';\n  const rowSpan = Math.max(1, Number(cell.rowSpan || 1));\n  if (cell.type === 'empty') {\n    return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;min-height:68px;height:68px;\"></td>`;\n  }\n  const module = esc(cell.module || cell.matiere || '');\n  const salle = esc(cell.salle || '');\n  const professeur = esc(cell.professeur || '');\n  return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;padding:6px;vertical-align:top;min-height:68px;\">\n    <span style=\"background:#FFF59D;font-weight:700;font-size:11px;display:block;padding:2px 4px;\">${module}</span>\n    <span style=\"background:#FFF59D;font-size:11px;display:block;padding:2px 4px;\">${salle ? 'Salle ' + salle : ''}</span>\n    <span style=\"font-size:11px;display:block;margin-top:2px;\">${professeur}</span>\n  </td>`;\n}\n\nconst thead = `<tr>${colonnes.map((c, i) => `<th style=\"border:1px solid #000;padding:5px;font-size:11px;text-align:${i===0?'center':'left'};${i===0?'width:65px;':''}\">${esc(c)}</th>`).join('')}</tr>`;\n\nconst bodyRows = [];\nfor (let i = 0; i < lignes.length; i++) {\n  if (separateurs.has(i)) {\n    bodyRows.push('<tr><td colspan=\"6\" style=\"background:#4472C4;height:14px;border:none;\"></td></tr>');\n  }\n  const ligne = lignes[i] || {};\n  const cells = Array.isArray(ligne.cells) ? ligne.cells : [];\n  bodyRows.push(`<tr><td style=\"border:1px solid #000;color:#C00000;font-weight:700;font-size:11px;text-align:center;vertical-align:middle;\">${esc(ligne.heureLabel || '')}</td>${cells.map(renderCell).join('')}</tr>`);\n}\n\nconst iaBanner = data.iaActive && data.suggestions\n  ? `<div style=\"background:#EEF2FF;border-left:4px solid #4338CA;padding:10px 14px;margin-bottom:16px;border-radius:0 6px 6px 0;\"><strong style=\"color:#4338CA;font-size:12px;\">🤖 Optimisé par Gemini 2.5 Flash</strong><p style=\"color:#374151;font-size:11px;margin:4px 0 0;\">${esc(data.suggestions)}</p></div>`\n  : '';\n\nconst html = `<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;padding:28px;background:#fff;color:#000;}table{border-collapse:collapse;width:100%;}</style></head><body>\n<div style=\"display:flex;align-items:flex-start;margin-bottom:20px;\"><div style=\"border:2px solid #1E3A5F;padding:8px 12px;border-radius:6px;\"><div style=\"font-weight:900;font-size:12px;color:#1E3A5F;line-height:1.5;\">Institut<br>Supérieur<br><span style=\"text-decoration:underline;\">du Digital</span></div></div></div>\n${iaBanner}\n<div style=\"text-align:center;font-weight:bold;font-size:15px;text-decoration:underline;text-transform:uppercase;margin-bottom:5px;\">${esc(t.titre || '')}</div>\n<div style=\"text-align:center;font-size:13px;text-decoration:underline;text-transform:uppercase;margin-bottom:18px;\">${esc(t.sousTitre || '')}</div>\n<table><thead>${thead}</thead><tbody>${bodyRows.join('')}</tbody></table>\n<p style=\"color:#C00000;font-style:italic;font-weight:bold;text-decoration:underline;margin-top:18px;font-size:12px;\">${esc(t.noteBasPage || \"NB : L'emploi du temps n'est pas définitif. Il peut toujours subir des modifications.\")}</p>\n</body></html>`;\n\nreturn [{ json: { ...data, htmlEmail: html } }];"
       },
       "id": "generer-html",
       "name": "Générer HTML — Style ISD",
@@ -109,12 +110,12 @@
   ],
   "connections": {
     "Webhook — Réception EDT": { "main": [[{ "node": "Préparer les données", "type": "main", "index": 0 }]] },
-    "Préparer les données":    { "main": [[{ "node": "Claude IA (via backend)", "type": "main", "index": 0 }]] },
-    "Claude IA (via backend)": { "main": [[{ "node": "Fusion réponse IA",      "type": "main", "index": 0 }]] },
+    "Préparer les données":    { "main": [[{ "node": "Gemini 2.5 Flash (via backend)", "type": "main", "index": 0 }]] },
+    "Gemini 2.5 Flash (via backend)": { "main": [[{ "node": "Fusion réponse IA",      "type": "main", "index": 0 }]] },
     "Fusion réponse IA":       { "main": [[{ "node": "Générer HTML — Style ISD", "type": "main", "index": 0 }]] },
     "Générer HTML — Style ISD":{ "main": [[{ "node": "Split par destinataire",   "type": "main", "index": 0 }]] },
     "Split par destinataire":  { "main": [[{ "node": "Envoyer EDT",              "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "tags": [{ "name": "eduschedule" }, { "name": "edt" }, { "name": "claude-ia" }]
+  "tags": [{ "name": "eduschedule" }, { "name": "edt" }, { "name": "gemini-ia" }]
 }
