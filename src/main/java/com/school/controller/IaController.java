@@ -1,6 +1,5 @@
 package com.school.controller;
 
-import com.school.repository.DisponibiliteRepository;
 import com.school.service.IaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +10,6 @@ import java.util.*;
 @RestController @RequestMapping("/api/ia") @RequiredArgsConstructor
 public class IaController {
     private final IaService iaService;
-    private final DisponibiliteRepository dispoRepo;
     @Value("${gemini.api.key:}") private String apiKey;
     @Value("${gemini.model:gemini-2.5-flash}") private String model;
 
