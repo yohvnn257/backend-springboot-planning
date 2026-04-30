@@ -42,13 +42,17 @@
         "sendBody": true,
         "contentType": "json",
         "body": "={{ JSON.stringify({ filiere: $json.filiere, niveau: $json.niveau, semaineDu: $json.semaineDu, semaineAu: $json.semaineAu, creneaux: $json.creneaux }) }}",
-        "options": { "timeout": 60000 }
+        "options": { "timeout": 90000 }
       },
       "id": "gemini-backend",
       "name": "Gemini 2.5 Flash (via backend)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [580, 360]
+      "position": [580, 360],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -95,27 +99,39 @@
     },
     {
       "parameters": {
-        "sendTo": "={{ $json.destinataires }}",
-        "subject": "=📅 EDT — {{ $('Préparer les données').item.json.filiere }} {{ $('Préparer les données').item.json.niveau }} — Semaine du {{ $('Préparer les données').item.json.semaineDu }}",
-        "emailType": "html",
-        "message": "={{ $('Générer HTML — Style ISD').item.json.htmlEmail }}",
-        "options": {}
+        "url": "https://api.resend.com/emails",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_RESEND_API_KEY" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={{ JSON.stringify({ from: 'EduSchedule <onboarding@resend.dev>', to: [$json.destinataires], subject: '📅 EDT — ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' — Semaine du ' + $('Préparer les données').item.json.semaineDu, html: $('Générer HTML — Style ISD').item.json.htmlEmail }) }}",
+        "options": { "timeout": 30000 }
       },
       "id": "envoyer-edt",
-      "name": "Envoyer EDT",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [1380, 360]
+      "name": "Envoyer EDT (Resend)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 360],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
-    "Webhook — Réception EDT": { "main": [[{ "node": "Préparer les données", "type": "main", "index": 0 }]] },
-    "Préparer les données":    { "main": [[{ "node": "Gemini 2.5 Flash (via backend)", "type": "main", "index": 0 }]] },
+    "Webhook — Réception EDT":        { "main": [[{ "node": "Préparer les données", "type": "main", "index": 0 }]] },
+    "Préparer les données":           { "main": [[{ "node": "Gemini 2.5 Flash (via backend)", "type": "main", "index": 0 }]] },
     "Gemini 2.5 Flash (via backend)": { "main": [[{ "node": "Fusion réponse IA",      "type": "main", "index": 0 }]] },
-    "Fusion réponse IA":       { "main": [[{ "node": "Générer HTML — Style ISD", "type": "main", "index": 0 }]] },
-    "Générer HTML — Style ISD":{ "main": [[{ "node": "Split par destinataire",   "type": "main", "index": 0 }]] },
-    "Split par destinataire":  { "main": [[{ "node": "Envoyer EDT",              "type": "main", "index": 0 }]] }
+    "Fusion réponse IA":              { "main": [[{ "node": "Générer HTML — Style ISD", "type": "main", "index": 0 }]] },
+    "Générer HTML — Style ISD":       { "main": [[{ "node": "Split par destinataire",   "type": "main", "index": 0 }]] },
+    "Split par destinataire":         { "main": [[{ "node": "Envoyer EDT (Resend)",     "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "tags": [{ "name": "eduschedule" }, { "name": "edt" }, { "name": "gemini-ia" }]
+  "tags": [{ "name": "eduschedule" }, { "name": "edt" }, { "name": "gemini-ia" }, { "name": "resend" }]
 }
