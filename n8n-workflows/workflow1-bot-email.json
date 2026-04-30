@@ -100,11 +100,9 @@
     "Cron — Lundi 7h00":     { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
     "Webhook — Dashboard":   { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
     "Préparer envoi (Render)": { "main": [[{ "node": "Split par professeur", "type": "main", "index": 0 }]] },
-    "Split par professeur":  { "main": [[
-      { "node": "Envoyer Email",   "type": "main", "index": 0 },
-      { "node": "WhatsApp Twilio", "type": "main", "index": 0 }
-    ]]},
-    "Envoyer Email":         { "main": [[{ "node": "Marquer ENVOYE (Render)", "type": "main", "index": 0 }]] }
+    "Split par professeur":  { "main": [[{ "node": "Envoyer Email", "type": "main", "index": 0 }]] },
+    "Envoyer Email":         { "main": [[{ "node": "WhatsApp Twilio", "type": "main", "index": 0 }]] },
+    "WhatsApp Twilio":       { "main": [[{ "node": "Marquer ENVOYE (Render)", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },
   "tags": [{ "name": "eduschedule" }, { "name": "email" }, { "name": "whatsapp" }]

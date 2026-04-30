@@ -34,7 +34,7 @@ public class EmailService {
             m.put("email",p.getEmail());
             m.put("whatsappNumero",p.getTelephone());
             m.put("whatsappStatut",Optional.ofNullable(p.getWhatsappStatut()).orElse("ATTENTE"));
-            m.put("telephone", p.getTelephone());
+            m.put("telephone", normaliserTelephone(p.getTelephone()));
             m.put("lienReponse",
                 p.getResponseToken() != null
                 ? frontendUrl + "/repondre/" + p.getResponseToken()
@@ -117,4 +117,35 @@ public class EmailService {
         profRepo.findAll().forEach(p->p.setWhatsappStatut("ATTENTE"));
         log.info("Statuts réinitialisés");
     }
+    private String normaliserTelephone(String tel) {
+    if (tel == null || tel.isBlank()) return "";
+
+    // Supprimer espaces, tirets, parenthèses
+    String clean = tel.replaceAll("[\\s\\-().]+", "").trim();
+
+    // Cas stocké avec +225 : +2250XXXXXXXXX (14 chiffres)
+    // Le 0 après +225 est le préfixe national → on le supprime
+    // +2250142807548 → +22542807548 (supprime juste le 0)
+    if (clean.startsWith("+2250") && clean.length() == 14) {
+        return "+225" + clean.substring(5); // saute le 0
+    }
+
+    // Déjà bon format +225XXXXXXXXX (12 ou 13 chiffres sans 0)
+    if (clean.startsWith("+225") && (clean.length() == 12 || clean.length() == 13)) {
+        return clean;
+    }
+
+    // Format local avec 0 : 0142807548 (10 chiffres)
+    if (clean.startsWith("0") && clean.length() == 10) {
+        return "+225" + clean.substring(1); // +225 + 9 chiffres
+    }
+
+    // Format local sans 0 : 142807548 (9 chiffres) ou 42807548 (8 chiffres)
+    if (clean.length() == 9 || clean.length() == 8) {
+        return "+225" + clean;
+    }
+
+    // Fallback : retourner tel quel
+    return clean;
+}
 }
