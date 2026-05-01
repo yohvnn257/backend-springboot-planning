@@ -46,33 +46,32 @@
     },
     {
       "parameters": {
-        "fieldToSplitOut": "professeurs",
-        "options": {}
+        "jsCode": "const data = $input.first().json;\nconst profs = data.professeurs || data.body?.professeurs || [];\nif (!profs.length) throw new Error('Aucun professeur — vérifiez que Render est actif et que des profs existent');\nconsole.log(`${profs.length} prof(s) avec tokens générés via /preparer-envoi`);\nreturn profs.map(p => ({ json: p }));"
       },
-      "id": "split-profs",
-      "name": "Split par professeur",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
+      "id": "extraire-profs",
+      "name": "Extraire professeurs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [640, 360]
     },
     {
       "parameters": {
-        "url": "https://api.resend.com/emails",
+        "url": "https://api.mailjet.com/v3.1/send",
         "method": "POST",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer YOUR_RESEND_API_KEY" },
+            { "name": "Authorization", "value": "Basic YOUR_BASE64_API_KEY_SECRET" },
             { "name": "Content-Type",  "value": "application/json" }
           ]
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({ from: 'EduSchedule <onboarding@resend.dev>', to: [$('Split par professeur').item.json.email], subject: '📅 EduSchedule — Vos disponibilités — semaine prochaine', html: \"<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Arial,sans-serif;background:#F1F5F9;padding:24px;'><div style='max-width:520px;margin:0 auto;'><div style='background:#1E1B4B;padding:20px;border-radius:12px 12px 0 0;text-align:center;'><h1 style='color:white;margin:0;font-size:20px;'>📅 EduSchedule</h1><p style='color:#A5B4FC;margin:4px 0 0;font-size:12px;'>Institut Supérieur du Digital</p></div><div style='background:white;padding:24px;border-radius:0 0 12px 12px;'><p style='color:#1F2937;'>Bonjour <strong>\" + $('Split par professeur').item.json.nom + \"</strong> 👋</p><p style='color:#4B5563;'>Merci de saisir vos <strong>disponibilités pour la semaine prochaine</strong>.</p><p style='color:#4B5563;'>Modules : <strong>\" + ($('Split par professeur').item.json.modules ? $('Split par professeur').item.json.modules.join(', ') : $('Split par professeur').item.json.matiere) + \"</strong></p><div style='text-align:center;margin:28px 0;'><a href='\" + $('Split par professeur').item.json.lienReponse + \"' style='background:#4338CA;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;'>✏️ Saisir mes disponibilités</a></div><p style='color:#9CA3AF;font-size:11px;text-align:center;'>Lien personnel valide 7 jours — ne pas partager.</p><p style='color:#9CA3AF;font-size:10px;text-align:center;margin-top:20px;'>Institut Supérieur du Digital — EduSchedule</p></div></div></body></html>\" }) }}",
+        "body": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduSchedule ISD' }, To: [{ Email: $('Extraire professeurs').item.json.email, Name: $('Extraire professeurs').item.json.nom }], Subject: 'EduSchedule — Vos disponibilités — semaine prochaine', HTMLPart: \"<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'><div style='background:linear-gradient(135deg,#1E1B4B,#4338CA);padding:24px;border-radius:12px 12px 0 0;'><h1 style='color:white;margin:0;font-size:22px;'>EduSchedule</h1><p style='color:#A5B4FC;margin:4px 0 0;font-size:14px;'>Institut Superieur du Digital</p></div><div style='background:white;padding:28px;border:1px solid #E5E7EB;border-radius:0 0 12px 12px;'><p style='font-size:17px;color:#1F2937;'>Bonjour <strong>\" + $('Extraire professeurs').item.json.nom + \"</strong></p><p style='color:#4B5563;'>Nous preparons l'emploi du temps de la semaine prochaine.</p><div style='background:#F8FAFC;border-left:4px solid #4338CA;padding:12px 16px;margin:16px 0;'><p style='margin:0;'>Modules : <strong>\" + ($('Extraire professeurs').item.json.modules ? $('Extraire professeurs').item.json.modules.join(', ') : $('Extraire professeurs').item.json.matiere) + \"</strong></p></div><p style='color:#4B5563;'>Cliquez sur le bouton ci-dessous pour indiquer vos disponibilites :</p><div style='text-align:center;margin:28px 0;'><a href='\" + $('Extraire professeurs').item.json.lienReponse + \"' style='background:#4338CA;color:white;padding:16px 36px;border-radius:10px;text-decoration:none;font-size:16px;display:inline-block;'>Indiquer mes disponibilites</a></div><p style='color:#9CA3AF;font-size:12px;'>Lien personnel valide 7 jours, ne pas partager.</p><hr style='border:none;border-top:1px solid #E5E7EB;margin:20px 0;'><p style='color:#9CA3AF;font-size:11px;margin:0;'>Institut Superieur du Digital — EduSchedule</p></div></div>\" }] }) }}",
         "options": { "timeout": 30000 }
       },
       "id": "envoyer-email",
-      "name": "Envoyer Email (Resend)",
+      "name": "Envoyer Email (Mailjet)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [860, 280],
@@ -85,8 +84,8 @@
       "parameters": {
         "operation": "sendMessage",
         "from": "whatsapp:+14155238886",
-        "to": "=whatsapp:+{{ $('Split par professeur').item.json.telephone ? $('Split par professeur').item.json.telephone.replace(/[^0-9]/g, '') : '' }}",
-        "message": "=📅 *EduSchedule — ISD*\n\nBonjour *{{ $('Split par professeur').item.json.nom }}* 👋\n\nVeuillez saisir vos disponibilités pour la semaine prochaine.\n\n📚 *Modules :* {{ $('Split par professeur').item.json.modules ? $('Split par professeur').item.json.modules.join(', ') : $('Split par professeur').item.json.matiere }}\n\n🔗 {{ $('Split par professeur').item.json.lienReponse }}\n\n_Lien valide 7 jours — Institut Supérieur du Digital_"
+        "to": "=whatsapp:+{{ $('Extraire professeurs').item.json.telephone ? $('Extraire professeurs').item.json.telephone.replace(/[^0-9]/g, '') : '' }}",
+        "message": "=📅 *EduSchedule — ISD*\n\nBonjour *{{ $('Extraire professeurs').item.json.nom }}* 👋\n\nVeuillez saisir vos disponibilités pour la semaine prochaine.\n\n📚 *Modules :* {{ $('Extraire professeurs').item.json.modules ? $('Extraire professeurs').item.json.modules.join(', ') : $('Extraire professeurs').item.json.matiere }}\n\n🔗 {{ $('Extraire professeurs').item.json.lienReponse }}\n\n_Lien valide 7 jours — Institut Supérieur du Digital_"
       },
       "id": "twilio-whatsapp",
       "name": "WhatsApp Twilio",
@@ -99,7 +98,7 @@
     },
     {
       "parameters": {
-        "url": "=https://backend-springboot-planning.onrender.com/api/professeurs/{{ $('Split par professeur').item.json.id }}/whatsapp-statut",
+        "url": "=https://backend-springboot-planning.onrender.com/api/professeurs/{{ $('Extraire professeurs').item.json.id }}/whatsapp-statut",
         "method": "PATCH",
         "sendBody": true,
         "contentType": "json",
@@ -120,11 +119,11 @@
   "connections": {
     "Cron — Lundi 7h00":       { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
     "Webhook — Dashboard":     { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
-    "Préparer envoi (Render)": { "main": [[{ "node": "Split par professeur", "type": "main", "index": 0 }]] },
-    "Split par professeur":    { "main": [[{ "node": "Envoyer Email (Resend)", "type": "main", "index": 0 }]] },
-    "Envoyer Email (Resend)":  { "main": [[{ "node": "WhatsApp Twilio", "type": "main", "index": 0 }]] },
+    "Préparer envoi (Render)": { "main": [[{ "node": "Extraire professeurs", "type": "main", "index": 0 }]] },
+    "Extraire professeurs":    { "main": [[{ "node": "Envoyer Email (Mailjet)", "type": "main", "index": 0 }]] },
+    "Envoyer Email (Mailjet)": { "main": [[{ "node": "WhatsApp Twilio", "type": "main", "index": 0 }]] },
     "WhatsApp Twilio":         { "main": [[{ "node": "Marquer ENVOYE (Render)", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "tags": [{ "name": "eduschedule" }, { "name": "email" }, { "name": "whatsapp" }, { "name": "resend" }]
+  "tags": [{ "name": "eduschedule" }, { "name": "email" }, { "name": "whatsapp" }, { "name": "mailjet" }]
 }
