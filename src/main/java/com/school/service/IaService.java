@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-/** Service IA basé sur Google Gemini 2.5 Flash. */
+/** Service IA basé sur Google Gemini 3 Flash (fallback Gemini 2.5 Flash via env GEMINI_MODEL). */
 @Service @RequiredArgsConstructor @Slf4j
 public class IaService {
     private final RestTemplate restTemplate;

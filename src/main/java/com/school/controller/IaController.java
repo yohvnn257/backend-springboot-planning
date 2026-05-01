@@ -11,7 +11,7 @@ import java.util.*;
 public class IaController {
     private final IaService iaService;
     @Value("${gemini.api.key:}") private String apiKey;
-    @Value("${gemini.model:gemini-2.5-flash}") private String model;
+    @Value("${gemini.model:gemini-3-flash-preview}") private String model;
 
     @GetMapping("/statut")
     public ResponseEntity<Map<String,Object>> statut() {
@@ -19,7 +19,7 @@ public class IaController {
             "actif", apiKey != null && !apiKey.isBlank(),
             "provider", "Google Gemini",
             "modele", model,
-            "message", apiKey != null && !apiKey.isBlank() ? "Gemini 2.5 Flash connecté ✅" : "Ajoutez GEMINI_API_KEY dans Render"
+            "message", apiKey != null && !apiKey.isBlank() ? "Gemini 3 Flash connecté ✅" : "Ajoutez GEMINI_API_KEY dans Render"
         ));
     }
 

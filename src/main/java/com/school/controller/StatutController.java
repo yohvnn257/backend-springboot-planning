@@ -31,7 +31,7 @@ public class StatutController {
             Map.entry("profsEnAttente",total-repondus),
             Map.entry("tauxReponse",total>0?Math.round((repondus*100.0)/total):0),
             Map.entry("iaActive",apiKey!=null&&!apiKey.isBlank()),
-            Map.entry("iaProvider","Gemini 2.5 Flash")
+            Map.entry("iaProvider","Gemini 3 Flash")
         ));
     }
 }
