@@ -110,7 +110,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "body": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduSchedule ISD' }, To: [{ Email: $json.destinataires }], Subject: 'EDT — ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' — Semaine du ' + $('Préparer les données').item.json.semaineDu, HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
+        "body": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'Institut Superieur du Digital' }, To: [{ Email: $json.destinataires }], Subject: 'Emploi du temps - ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' - Semaine du ' + $('Préparer les données').item.json.semaineDu, Headers: { 'Reply-To': 'yohanntoure40@gmail.com', 'List-Unsubscribe': '<mailto:yohanntoure40@gmail.com?subject=Desinscription>' }, TextPart: \"Bonjour,\\n\\nVeuillez trouver ci-joint votre emploi du temps pour la semaine du \" + $('Préparer les données').item.json.semaineDu + \" au \" + $('Préparer les données').item.json.semaineAu + \".\\n\\nFiliere : \" + $('Préparer les données').item.json.filiere + \"\\nNiveau : \" + $('Préparer les données').item.json.niveau + \"\\n\\nPour toute question, contactez le secretariat.\\n\\nCordialement,\\nLe secretariat de l'Institut Superieur du Digital\\n\\n--\\nPour vous desinscrire : repondez a ce mail avec 'Desinscription'.\", HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
         "options": { "timeout": 30000 }
       },
       "id": "envoyer-edt",
