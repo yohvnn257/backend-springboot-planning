@@ -24,21 +24,26 @@ public class EmploiDuTempsService {
     public List<EmploiDuTemps> findAll(){return edtRepo.findAllByOrderByDateCreationDesc();}
     @Transactional
     public Map<String,Object> generer(String filiere,String niveau,LocalDate du,LocalDate au){
-        List<Disponibilite> dispos=dispoRepo.findByFiliereAndNiveauAndJourBetween(filiere,niveau,du,au);
-        if(dispos.isEmpty()) throw new IllegalArgumentException("Aucune disponibilité trouvée pour ce niveau et cette filière.");
+        // Le prof saisit juste ses créneaux. La secrétaire choisit filière+niveau au moment de la génération.
+        // On prend toutes les dispos de la semaine — la secrétaire édite ensuite chaque créneau si besoin.
+        List<Disponibilite> dispos=dispoRepo.findByJourBetween(du,au);
+        if(dispos.isEmpty()) throw new IllegalArgumentException("Aucune disponibilité trouvée pour cette semaine. Demandez aux professeurs de soumettre leurs créneaux.");
         List<Map<String,Object>> creneaux=new ArrayList<>();
         for(Disponibilite d:dispos){
-            List<String> mods=moduleRepo.findNomsByProfesseurId(d.getProfesseur().getId());
+            // Recupere les modules du prof (page Modules) pour avoir aussi leur salle assignee
+            List<com.school.entity.Module> modules = moduleRepo.findByProfesseurId(d.getProfesseur().getId());
+            com.school.entity.Module module = modules.isEmpty() ? null : modules.get(0);
             Map<String,Object> c=new LinkedHashMap<>();
             c.put("jour",d.getJour().toString());
             c.put("jourNom",getNomJour(d.getJour().getDayOfWeek().getValue()));
             c.put("heureDebut",d.getHeureDebut().toString());
             c.put("heureFin",d.getHeureFin().toString());
-            c.put("module", mods.isEmpty() ? "(non assigné)" : mods.get(0));
+            c.put("module", module != null ? module.getNom() : "(a completer)");
             c.put("professeur",d.getProfesseur().getNom());
-            c.put("salle",d.getSalle()!=null?d.getSalle():"");
-            c.put("filiere",d.getFiliere());
-            c.put("niveau",d.getNiveau());
+            // La salle vient du module (page Modules), pas de la dispo
+            c.put("salle", module != null && module.getSalle() != null ? module.getSalle() : "");
+            c.put("filiere",filiere);
+            c.put("niveau",niveau);
             creneaux.add(c);
         }
         creneaux.sort(Comparator.comparing(c->c.get("jour").toString()+c.get("heureDebut")));

@@ -41,9 +41,9 @@ public class ReponseController {
         List<Disponibilite> list=new ArrayList<>();
         for(Map<String,Object> c:creneaux){
             try{list.add(Disponibilite.builder().professeur(prof)
-                .filiere((String)c.getOrDefault("filiere","Non spécifiée"))
-                .niveau((String)c.getOrDefault("niveau","L3"))
-                .salle((String)c.getOrDefault("salle",""))
+                .filiere(null)  // Assigne par la secretaire a la generation de l'EDT
+                .niveau(null)
+                .salle(null)    // Idem, la secretaire choisit la salle dans la grille EDT
                 .jour(LocalDate.parse((String)c.get("jour")))
                 .heureDebut(LocalTime.parse((String)c.get("heureDebut"),TIME_FMT))
                 .heureFin(LocalTime.parse((String)c.get("heureFin"),TIME_FMT))
