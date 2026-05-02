@@ -16,5 +16,4 @@ public class ModuleController {
     @PostMapping public ResponseEntity<Module> create(@RequestBody ModuleRequest r){return ResponseEntity.status(201).body(svc.create(r));}
     @PutMapping("/{id}") public ResponseEntity<Module> update(@PathVariable Long id,@RequestBody ModuleRequest r){return ResponseEntity.ok(svc.update(id,r));}
     @DeleteMapping("/{id}") public ResponseEntity<ApiResponse> delete(@PathVariable Long id){svc.delete(id);return ResponseEntity.ok(ApiResponse.ok("Supprimé"));}
-    @PostMapping("/{id}/envoyer-email") public ResponseEntity<Map<String,Object>> envoyerEmail(@PathVariable Long id){return ResponseEntity.ok(svc.envoyerEmail(id));}
 }

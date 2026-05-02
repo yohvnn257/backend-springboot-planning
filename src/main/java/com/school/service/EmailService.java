@@ -1,7 +1,6 @@
 package com.school.service;
 import com.school.entity.Disponibilite;
 import com.school.entity.Professeur;
-import com.school.exception.ResourceNotFoundException;
 import com.school.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +9,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service @RequiredArgsConstructor @Slf4j
@@ -22,15 +20,12 @@ public class EmailService {
     private final RestTemplate restTemplate;
     @Value("${n8n.email.trigger.url}") private String n8nUrl;
     @Value("${app.frontend.url}") private String frontendUrl;
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     @Transactional(readOnly=true)
     public List<Map<String,Object>> getProfesseursStatuts() {
         return profRepo.findAll().stream().filter(p->p.getEmail()!=null&&!p.getEmail().isBlank()).map(p->{
             Map<String,Object> m=new LinkedHashMap<>();
             m.put("id",p.getId()); m.put("nom",p.getNom());
-            m.put("matiere",p.getMatiere());
             m.put("email",p.getEmail());
             m.put("whatsappNumero",p.getTelephone());
             m.put("whatsappStatut",Optional.ofNullable(p.getWhatsappStatut()).orElse("ATTENTE"));
@@ -62,7 +57,7 @@ public class EmailService {
             List<String> mods=moduleRepo.findNomsByProfesseurId(p.getId());
             Map<String,Object> m=new LinkedHashMap<>();
             m.put("id",p.getId()); m.put("nom",p.getNom());
-            m.put("matiere",mods.isEmpty()?p.getMatiere():String.join(", ",mods));
+            m.put("matiere", mods.isEmpty() ? "(aucun module assigné)" : String.join(", ", mods));
             m.put("modules",mods); m.put("email",p.getEmail());
             m.put("telephone",p.getTelephone());
             m.put("lienReponse",frontendUrl+"/repondre/"+p.getResponseToken());
@@ -84,32 +79,6 @@ public class EmailService {
             log.error("Erreur n8n: {}",e.getMessage());
             return Map.of("succes",false,"message","Tokens générés, n8n indisponible: "+e.getMessage(),"professeurs",profs.size());
         }
-    }
-
-    @Transactional
-    public Map<String,Object> sauvegarderDisponibilites(Map<String,Object> payload) {
-        String token=(String)payload.get("token");
-        String emailProf=(String)payload.get("emailProfesseur");
-        Professeur prof = token!=null&&!token.isBlank()
-            ? profRepo.findByResponseToken(token).orElseThrow(()->new ResourceNotFoundException("Token invalide"))
-            : profRepo.findByEmail(emailProf).orElseThrow(()->new ResourceNotFoundException("Prof non trouvé: "+emailProf));
-        @SuppressWarnings("unchecked") List<Map<String,Object>> creneaux=(List<Map<String,Object>>)payload.get("creneaux");
-        if(creneaux==null||creneaux.isEmpty()) throw new IllegalArgumentException("Aucun créneau");
-        List<Disponibilite> list=new ArrayList<>();
-        for(Map<String,Object> c:creneaux) {
-            list.add(Disponibilite.builder().professeur(prof)
-                .filiere((String)c.getOrDefault("filiere","Non spécifiée"))
-                .niveau((String)c.getOrDefault("niveau","L3"))
-                .salle((String)c.getOrDefault("salle",""))
-                .jour(LocalDate.parse((String)c.get("jour"),DATE_FMT))
-                .heureDebut(LocalTime.parse((String)c.get("heureDebut"),TIME_FMT))
-                .heureFin(LocalTime.parse((String)c.get("heureFin"),TIME_FMT))
-                .statut("DISPONIBLE").build());
-        }
-        dispoRepo.saveAll(list);
-        prof.setWhatsappStatut("REPONDU");
-        profRepo.save(prof);
-        return Map.of("succes",true,"professeur",prof.getNom(),"creneaux",list.size());
     }
 
     @Transactional

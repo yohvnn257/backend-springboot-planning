@@ -20,5 +20,4 @@ public class WebhookController {
         return ResponseEntity.ok(Map.of("source","backend","total",profs.size(),"professeurs",profs));
     }
     @PostMapping("/reset-statuts-whatsapp") public ResponseEntity<ApiResponse> reset(){emailService.resetStatuts();return ResponseEntity.ok(ApiResponse.ok("Statuts réinitialisés"));}
-    @PostMapping("/disponibilite-whatsapp") public ResponseEntity<Map<String,Object>> recevoir(@RequestBody Map<String,Object> p){return ResponseEntity.ok(emailService.sauvegarderDisponibilites(p));}
 }

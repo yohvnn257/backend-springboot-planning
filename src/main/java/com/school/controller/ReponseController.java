@@ -27,7 +27,7 @@ public class ReponseController {
             return ResponseEntity.status(410).body(Map.of("valide",false,"message","Lien expiré. Contactez la secrétaire."));
         List<String> mods=moduleRepo.findNomsByProfesseurId(p.getId());
         return ResponseEntity.ok(Map.of("valide",true,"id",p.getId(),"nom",p.getNom(),
-            "matiere",mods.isEmpty()?p.getMatiere():String.join(", ",mods),
+            "matiere", mods.isEmpty() ? "(aucun module assigné)" : String.join(", ", mods),
             "modules",mods,"email",p.getEmail()));
     }
 

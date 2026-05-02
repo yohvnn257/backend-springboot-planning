@@ -26,11 +26,11 @@ public class ProfesseurService {
     @Transactional
     public Professeur create(ProfesseurRequest r){
         if(repo.existsByEmail(r.getEmail())) throw new IllegalArgumentException("Email déjà utilisé: "+r.getEmail());
-        return repo.save(Professeur.builder().nom(r.getNom()).matiere(r.getMatiere()!=null?r.getMatiere():"").email(r.getEmail()).telephone(normaliserTelephone(r.getTelephone())).build());
+        return repo.save(Professeur.builder().nom(r.getNom()).email(r.getEmail()).telephone(normaliserTelephone(r.getTelephone())).build());
     }
     @Transactional
     public Professeur update(Long id, ProfesseurRequest r){
-        Professeur p=findById(id);p.setNom(r.getNom());if(r.getMatiere()!=null)p.setMatiere(r.getMatiere());
+        Professeur p=findById(id);p.setNom(r.getNom());
         p.setEmail(r.getEmail());p.setTelephone(normaliserTelephone(r.getTelephone()));return repo.save(p);
     }
     // Normalise vers E.164 (requis par Twilio). Default : Côte d'Ivoire (+225) si numéro local 10 chiffres.

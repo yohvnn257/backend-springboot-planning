@@ -34,13 +34,4 @@ public class IaController {
         if (creneaux.isEmpty()) return ResponseEntity.badRequest().body(Map.of("erreur","Aucun créneau fourni"));
         return ResponseEntity.ok(iaService.optimiserEdt(filiere, niveau, semaineDu, semaineAu, creneaux));
     }
-
-    @PostMapping("/analyser-disponibilites")
-    public ResponseEntity<Map<String,Object>> analyser(@RequestBody Map<String,Object> body) {
-        String filiere = (String) body.getOrDefault("filiere","");
-        String niveau = (String) body.getOrDefault("niveau","");
-        @SuppressWarnings("unchecked")
-        List<Map<String,Object>> dispos = (List<Map<String,Object>>) body.getOrDefault("disponibilites", List.of());
-        return ResponseEntity.ok(iaService.analyserDisponibilites(filiere, niveau, dispos));
-    }
 }

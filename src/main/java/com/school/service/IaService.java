@@ -32,7 +32,7 @@ public class IaService {
         try {
             String creneauxJson = objectMapper.writeValueAsString(creneaux);
             String prompt = buildEdtPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
-            Map<String,Object> response = appelerGemini(prompt, 4096, creneaux, "optimiserEdt");
+            Map<String,Object> response = appelerGemini(prompt, 4096, "optimiserEdt");
             response.putIfAbsent("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneaux));
             response.putIfAbsent("creneauxOptimises", creneaux);
             return response;
@@ -47,23 +47,9 @@ public class IaService {
         }
     }
 
-    public Map<String,Object> analyserDisponibilites(String filiere, String niveau, List<Map<String,Object>> dispos) {
-        if (apiKey == null || apiKey.isBlank())
-            return Map.of("analyse","IA non configurée","suffisant",false,"iaActive",false);
-        try {
-            String prompt = "Analyse ces disponibilités pour " + filiere + " " + niveau + " :\n" +
-                objectMapper.writeValueAsString(dispos) + "\n\n" +
-                "Réponds en JSON : {\"suffisant\":true/false,\"nombreCreneaux\":N,\"joursCouverts\":[...],\"analyse\":\"...\",\"recommandations\":\"...\"}";
-            return appelerGemini(prompt, 800, null, "analyserDisponibilites");
-        } catch(Exception e) {
-            log.error("Erreur Gemini API (analyserDisponibilites): {}",e.getMessage());
-            return Map.of("analyse","Erreur: "+e.getMessage(),"iaActive",false);
-        }
-    }
-
     /** Appel HTTP générique vers l'API Gemini avec mode JSON natif. */
     @SuppressWarnings({"unchecked","rawtypes"})
-    private Map<String,Object> appelerGemini(String prompt, int maxTokens, List<Map<String,Object>> fallback, String contexte) throws Exception {
+    private Map<String,Object> appelerGemini(String prompt, int maxTokens, String contexte) throws Exception {
         Map<String,Object> body = Map.of(
             "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
             "generationConfig", Map.of(
@@ -131,7 +117,6 @@ Schéma JSON attendu:
       "heureDebut": "HH:mm",
       "heureFin": "HH:mm",
       "module": "string",
-      "matiere": "string",
       "professeur": "string",
       "salle": "string"
     }

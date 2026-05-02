@@ -34,7 +34,7 @@ public class EmploiDuTempsService {
             c.put("jourNom",getNomJour(d.getJour().getDayOfWeek().getValue()));
             c.put("heureDebut",d.getHeureDebut().toString());
             c.put("heureFin",d.getHeureFin().toString());
-            c.put("module",mods.isEmpty()?d.getProfesseur().getMatiere():mods.get(0));
+            c.put("module", mods.isEmpty() ? "(non assigné)" : mods.get(0));
             c.put("professeur",d.getProfesseur().getNom());
             c.put("salle",d.getSalle()!=null?d.getSalle():"");
             c.put("filiere",d.getFiliere());

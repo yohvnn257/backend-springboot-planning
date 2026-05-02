@@ -11,7 +11,6 @@ import java.util.List;
 public class Professeur {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
     @Column(nullable=false) private String nom;
-    @Column(nullable=false) private String matiere;
     @Column(nullable=false, unique=true) private String email;
     @Column private String telephone;
     @Column(name="whatsapp_statut", nullable=false) @Builder.Default private String whatsappStatut="ATTENTE";
