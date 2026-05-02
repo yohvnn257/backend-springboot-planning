@@ -102,8 +102,10 @@ Contraintes de sortie:
 - Toutes les heures au format HH:mm.
 - Le tableau doit pouvoir afficher exactement:
   * En-tête logo "Institut Supérieur du Digital"
-  * Titre "EMPLOI DU TEMPS (27 - 30 AVRIL 2026)" (avec les dates de la semaine demandée)
-  * Sous-titre "LICENCE 3 : DEVELOPPEMENT WEB" (adapter avec niveau/filière)
+  * Titre EXACTEMENT au format "EMPLOI DU TEMPS (J1 - J2 MOIS YYYY)" en majuscules (mois en lettres FR : JANVIER, FEVRIER...)
+    Exemples : "EMPLOI DU TEMPS (27 - 30 AVRIL 2026)" si meme mois, "EMPLOI DU TEMPS (29 AVRIL - 3 MAI 2026)" si mois differents
+  * Sous-titre EXACTEMENT au format "LICENCE N : FILIERE" (LICENCE 1/2/3) ou "MASTER N : FILIERE" (MASTER 1/2), filiere en MAJUSCULES
+    Exemples : "LICENCE 3 : DEVELOPPEMENT WEB", "MASTER 2 : MARKETING DIGITAL"
   * Colonnes Heures + Lundi..Vendredi (date incluse)
   * Séparateur matin/après-midi (fond bleu)
   * Note bas de page en rouge
@@ -178,8 +180,8 @@ Règles "cells":
             lignes.add(Map.of("heureLabel", slot, "cells", cells));
         }
 
-        String titre = "EMPLOI DU TEMPS (" + formatJourMois(semaineDu, lundi.toString()) + " - " + formatJourMois(semaineAu, lundi.plusDays(4).toString()) + ")";
-        String sousTitre = (Objects.requireNonNullElse(niveau, "") + " : " + Objects.requireNonNullElse(filiere, "")).trim();
+        String titre = "EMPLOI DU TEMPS (" + formatPeriode(semaineDu, semaineAu, lundi) + ")";
+        String sousTitre = (formatNiveau(niveau) + " : " + Objects.requireNonNullElse(filiere, "").toUpperCase()).trim();
 
         return Map.ofEntries(
             Map.entry("institution", "Institut Supérieur du Digital"),
@@ -200,5 +202,30 @@ Règles "cells":
         } catch (Exception e) {
             return fallbackIsoDate;
         }
+    }
+
+    /** Format conforme maquette ISD : "27 - 30 AVRIL 2026" si meme mois, sinon "29 AVRIL - 3 MAI 2026". */
+    private String formatPeriode(String du, String au, LocalDate fallback) {
+        String[] mois = {"JANVIER","FEVRIER","MARS","AVRIL","MAI","JUIN","JUILLET","AOUT","SEPTEMBRE","OCTOBRE","NOVEMBRE","DECEMBRE"};
+        try {
+            LocalDate d1 = LocalDate.parse(Objects.requireNonNullElse(du, fallback.toString()));
+            LocalDate d2 = LocalDate.parse(Objects.requireNonNullElse(au, fallback.plusDays(4).toString()));
+            if (d1.getMonth() == d2.getMonth() && d1.getYear() == d2.getYear())
+                return d1.getDayOfMonth() + " - " + d2.getDayOfMonth() + " " + mois[d1.getMonthValue() - 1] + " " + d1.getYear();
+            if (d1.getYear() == d2.getYear())
+                return d1.getDayOfMonth() + " " + mois[d1.getMonthValue() - 1] + " - " + d2.getDayOfMonth() + " " + mois[d2.getMonthValue() - 1] + " " + d1.getYear();
+            return d1.getDayOfMonth() + " " + mois[d1.getMonthValue() - 1] + " " + d1.getYear() + " - " + d2.getDayOfMonth() + " " + mois[d2.getMonthValue() - 1] + " " + d2.getYear();
+        } catch (Exception e) {
+            return formatJourMois(du, fallback.toString()) + " - " + formatJourMois(au, fallback.plusDays(4).toString());
+        }
+    }
+
+    /** Format niveau : L3 -> LICENCE 3, M2 -> MASTER 2. */
+    private String formatNiveau(String niveau) {
+        if (niveau == null || niveau.isBlank()) return "";
+        String code = niveau.trim().toUpperCase();
+        if (code.startsWith("L")) return "LICENCE " + code.substring(1);
+        if (code.startsWith("M")) return "MASTER " + code.substring(1);
+        return code;
     }
 }
