@@ -64,6 +64,12 @@ public class EmploiDuTempsService {
         return edtRepo.save(edt);
     }
     @Transactional
+    public void delete(Long id){
+        EmploiDuTemps edt=edtRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("EDT",id));
+        edtRepo.delete(edt);
+    }
+
+    @Transactional
     public Map<String,Object> envoyer(Long id){
         EmploiDuTemps edt=edtRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("EDT",id));
         List<String> emails=etudRepo.findByFiliereAndNiveau(edt.getFiliere(),edt.getNiveau()).stream().map(Etudiant::getEmail).toList();
