@@ -31,10 +31,15 @@ public class IaService {
         }
         try {
             String creneauxJson = objectMapper.writeValueAsString(creneaux);
-            String prompt = buildEdtPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
+            // Prompt compact: on demande SEULEMENT suggestions + creneauxOptimises (le edtTemplate est calcule cote backend)
+            String prompt = buildEdtPromptCompact(filiere, niveau, semaineDu, semaineAu, creneauxJson);
             Map<String,Object> response = appelerGemini(prompt, 4096, "optimiserEdt");
-            response.putIfAbsent("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneaux));
-            response.putIfAbsent("creneauxOptimises", creneaux);
+            // edtTemplate genere en backend a partir des creneaux optimises (ou bruts si Gemini a deconne)
+            @SuppressWarnings("unchecked")
+            List<Map<String,Object>> creneauxFinaux = (List<Map<String,Object>>) response.getOrDefault("creneauxOptimises", creneaux);
+            if (creneauxFinaux == null || creneauxFinaux.isEmpty()) creneauxFinaux = creneaux;
+            response.put("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneauxFinaux));
+            response.put("creneauxOptimises", creneauxFinaux);
             return response;
         } catch (Exception e) {
             log.error("Erreur Gemini API (optimiserEdt): {}", e.getMessage());
@@ -67,14 +72,55 @@ public class IaService {
         List<Map<String,Object>> candidates = (List<Map<String,Object>>) resp.getBody().get("candidates");
         if (candidates == null || candidates.isEmpty())
             throw new RuntimeException("Réponse Gemini vide");
+        // Si Gemini a coupe la reponse, finishReason = "MAX_TOKENS" -> on logge
+        Object finishReason = candidates.get(0).get("finishReason");
         Map<String,Object> content = (Map<String,Object>) candidates.get(0).get("content");
+        if (content == null) throw new RuntimeException("Réponse Gemini sans content (finishReason=" + finishReason + ")");
         List<Map<String,Object>> parts = (List<Map<String,Object>>) content.get("parts");
+        if (parts == null || parts.isEmpty()) throw new RuntimeException("Réponse Gemini sans parts");
         String texte = (String) parts.get(0).get("text");
+        if (texte == null || texte.isBlank()) throw new RuntimeException("Texte Gemini vide");
 
-        Map<String,Object> result = objectMapper.readValue(texte, Map.class);
-        result.put("iaActive", true);
-        log.debug("Gemini {} OK ({} chars)", contexte, texte.length());
-        return result;
+        // Nettoyage : Gemini peut entourer son JSON de ```json ... ``` malgre responseMimeType
+        String json = texte.trim();
+        if (json.startsWith("```")) {
+            int firstNl = json.indexOf('\n');
+            if (firstNl > 0) json = json.substring(firstNl + 1);
+            if (json.endsWith("```")) json = json.substring(0, json.length() - 3);
+            json = json.trim();
+        }
+
+        try {
+            Map<String,Object> result = objectMapper.readValue(json, Map.class);
+            result.put("iaActive", true);
+            log.debug("Gemini {} OK ({} chars, finishReason={})", contexte, json.length(), finishReason);
+            return result;
+        } catch (Exception parseError) {
+            log.error("Gemini {} JSON invalide (finishReason={}, longueur={}). Debut: {}", contexte, finishReason, json.length(), json.substring(0, Math.min(200, json.length())));
+            throw new RuntimeException("JSON Gemini invalide ou tronque (finishReason=" + finishReason + ")");
+        }
+    }
+
+    private String buildEdtPromptCompact(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
+        return """
+Tu es un planificateur academique expert de l'Institut Superieur du Digital.
+
+Contexte: Filiere=%s, Niveau=%s, Semaine du %s au %s
+Creneaux disponibles (JSON): %s
+
+Mission: analyser ces creneaux et proposer une organisation optimale.
+Regles: max 2 cours/jour par groupe, equilibrer la semaine, preferer le matin, eviter collisions prof/salle.
+
+Reponds UNIQUEMENT en JSON valide (PAS de markdown ```), schema strict:
+{
+  "suggestions": "phrase courte d'analyse et recommandation actionnable (1-2 phrases max)",
+  "creneauxOptimises": [
+    {"jour":"YYYY-MM-DD","heureDebut":"HH:mm","heureFin":"HH:mm","module":"...","professeur":"...","salle":"...","filiere":"%s","niveau":"%s"}
+  ]
+}
+
+Garde EXACTEMENT les memes module/professeur/salle qu'en entree. Tu peux reorganiser/supprimer des creneaux mais pas en inventer.
+""".formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson, filiere, niveau);
     }
 
     private String buildEdtPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
