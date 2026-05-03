@@ -47,10 +47,40 @@ public class EmploiDuTempsService {
             creneaux.add(c);
         }
         creneaux.sort(Comparator.comparing(c->c.get("jour").toString()+c.get("heureDebut")));
+        List<Map<String,Object>> conflits = detecterConflits(creneaux);
         try{
             EmploiDuTemps edt=edtRepo.save(EmploiDuTemps.builder().filiere(filiere).niveau(niveau).semaineDu(du).semaineAu(au).creneauxJson(objectMapper.writeValueAsString(creneaux)).statut("GENERE").build());
-            return Map.of("message","EDT généré","id",edt.getId(),"creneaux",creneaux);
+            Map<String,Object> resp=new LinkedHashMap<>();
+            resp.put("message","EDT généré");
+            resp.put("id",edt.getId());
+            resp.put("creneaux",creneaux);
+            resp.put("conflits",conflits);
+            return resp;
         }catch(Exception e){throw new RuntimeException("Erreur génération: "+e.getMessage());}
+    }
+
+    /** Détecte les conflits horaires : prof double-booké et salle double-bookée. */
+    private List<Map<String,Object>> detecterConflits(List<Map<String,Object>> creneaux){
+        List<Map<String,Object>> conflits=new ArrayList<>();
+        for(int i=0;i<creneaux.size();i++){
+            Map<String,Object> a=creneaux.get(i);
+            for(int j=i+1;j<creneaux.size();j++){
+                Map<String,Object> b=creneaux.get(j);
+                if(!Objects.equals(a.get("jour"),b.get("jour"))) continue;
+                if(!chevauchement((String)a.get("heureDebut"),(String)a.get("heureFin"),(String)b.get("heureDebut"),(String)b.get("heureFin"))) continue;
+                String profA=String.valueOf(a.get("professeur"));String profB=String.valueOf(b.get("professeur"));
+                String salleA=String.valueOf(a.get("salle"));String salleB=String.valueOf(b.get("salle"));
+                if(!profA.isBlank()&&profA.equals(profB))
+                    conflits.add(Map.of("type","PROF_DOUBLE","jour",a.get("jour"),"creneauA",a.get("heureDebut")+"-"+a.get("heureFin"),"creneauB",b.get("heureDebut")+"-"+b.get("heureFin"),"professeur",profA,"message","Professeur "+profA+" planifié sur 2 créneaux qui se chevauchent"));
+                if(!salleA.isBlank()&&salleA.equals(salleB))
+                    conflits.add(Map.of("type","SALLE_DOUBLE","jour",a.get("jour"),"creneauA",a.get("heureDebut")+"-"+a.get("heureFin"),"creneauB",b.get("heureDebut")+"-"+b.get("heureFin"),"salle",salleA,"message","Salle "+salleA+" utilisée par 2 cours simultanés"));
+            }
+        }
+        return conflits;
+    }
+
+    private boolean chevauchement(String d1,String f1,String d2,String f2){
+        return d1.compareTo(f2)<0 && d2.compareTo(f1)<0;
     }
     @Transactional
     public EmploiDuTemps update(Long id, Map<String,Object> body){
