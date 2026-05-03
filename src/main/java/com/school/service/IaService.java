@@ -38,6 +38,9 @@ public class IaService {
             @SuppressWarnings("unchecked")
             List<Map<String,Object>> creneauxFinaux = (List<Map<String,Object>>) response.getOrDefault("creneauxOptimises", creneaux);
             if (creneauxFinaux == null || creneauxFinaux.isEmpty()) creneauxFinaux = creneaux;
+            // CRITICAL: normaliser les creneaux Gemini -> ajouter jourNom + completer champs manquants
+            // depuis les creneaux d'origine (Gemini peut omettre ces champs)
+            creneauxFinaux = normaliserCreneaux(creneauxFinaux, creneaux, filiere, niveau);
             response.put("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneauxFinaux));
             response.put("creneauxOptimises", creneauxFinaux);
             return response;
@@ -99,6 +102,58 @@ public class IaService {
             log.error("Gemini {} JSON invalide (finishReason={}, longueur={}). Debut: {}", contexte, finishReason, json.length(), json.substring(0, Math.min(200, json.length())));
             throw new RuntimeException("JSON Gemini invalide ou tronque (finishReason=" + finishReason + ")");
         }
+    }
+
+    /**
+     * Normalise les creneaux retournes par Gemini :
+     * - Ajoute jourNom (Lundi/Mardi/.../Vendredi) calcule depuis le champ jour ISO
+     * - Complete module/professeur/salle depuis les creneaux d'origine si manquants
+     * - Garantit filiere/niveau presents
+     * Sans cette etape, l'EDT s'affiche vide cote frontend (la grille filtre par jourNom).
+     */
+    private List<Map<String,Object>> normaliserCreneaux(List<Map<String,Object>> ia, List<Map<String,Object>> origine, String filiere, String niveau) {
+        List<Map<String,Object>> out = new ArrayList<>();
+        for (Map<String,Object> c : ia) {
+            if (c == null) continue;
+            Map<String,Object> n = new LinkedHashMap<>(c);
+            // 1. jourNom : recalcule depuis jour ISO (Gemini ne le retourne pas dans le prompt compact)
+            String jour = (String) n.get("jour");
+            if (jour != null && !jour.isBlank()) {
+                try {
+                    LocalDate d = LocalDate.parse(jour);
+                    n.put("jourNom", getNomJourFr(d.getDayOfWeek().getValue()));
+                } catch (Exception ignored) {}
+            }
+            // 2. Si certains champs manquent, on tente de les recuperer depuis les creneaux d'origine matchant jour+heure
+            if (origine != null) {
+                Map<String,Object> match = origine.stream().filter(o ->
+                    Objects.equals(o.get("jour"), n.get("jour")) &&
+                    Objects.equals(o.get("heureDebut"), n.get("heureDebut"))
+                ).findFirst().orElse(null);
+                if (match != null) {
+                    n.putIfAbsent("module", match.get("module"));
+                    n.putIfAbsent("professeur", match.get("professeur"));
+                    n.putIfAbsent("salle", match.get("salle"));
+                }
+            }
+            // 3. Defaults
+            n.putIfAbsent("module", "(à compléter)");
+            n.putIfAbsent("professeur", "");
+            n.putIfAbsent("salle", "");
+            n.putIfAbsent("filiere", filiere);
+            n.putIfAbsent("niveau", niveau);
+            out.add(n);
+        }
+        return out;
+    }
+
+    private String getNomJourFr(int dayOfWeek) {
+        return switch (dayOfWeek) {
+            case 1 -> "Lundi"; case 2 -> "Mardi"; case 3 -> "Mercredi";
+            case 4 -> "Jeudi"; case 5 -> "Vendredi";
+            case 6 -> "Samedi"; case 7 -> "Dimanche";
+            default -> "";
+        };
     }
 
     private String buildEdtPromptCompact(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
