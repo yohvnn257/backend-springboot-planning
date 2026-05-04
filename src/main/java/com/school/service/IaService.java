@@ -101,12 +101,15 @@ public class IaService {
     /** Appel HTTP générique vers l'API Gemini avec fallback automatique sur gemini-2.5-flash si 503/UNAVAILABLE. */
     @SuppressWarnings({"unchecked","rawtypes"})
     private Map<String,Object> appelerGemini(String prompt, int maxTokens, String contexte) throws Exception {
+        // thinkingBudget=0 = desactive le mode "thinking" de Gemini 2.5 Flash qui consomme la moitie du budget tokens.
+        // Sans ca, Gemini 2.5 Flash "reflechit" en interne et tronque sa reponse JSON (finishReason=MAX_TOKENS).
         Map<String,Object> body = Map.of(
             "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
-            "generationConfig", Map.of(
-                "responseMimeType", "application/json",
-                "maxOutputTokens", maxTokens,
-                "temperature", 0.3
+            "generationConfig", Map.ofEntries(
+                Map.entry("responseMimeType", "application/json"),
+                Map.entry("maxOutputTokens", maxTokens),
+                Map.entry("temperature", 0.3),
+                Map.entry("thinkingConfig", Map.of("thinkingBudget", 0))
             )
         );
         HttpHeaders h = new HttpHeaders();
@@ -169,51 +172,32 @@ public class IaService {
 
     private String buildConseilsPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
         return """
-Tu es un planificateur academique expert de l'Institut Superieur du Digital (Cote d'Ivoire).
-Contexte: Filiere=%s, Niveau=%s, Semaine du %s au %s
-Creneaux planifies (JSON): %s
+EDT %s %s du %s au %s, creneaux : %s
 
-Analyse cette planification et donne 2-3 conseils concrets et actionnables (max 250 caracteres au total).
-Verifie : equilibrage des jours, charge matin/apres-midi, doubles bookings prof/salle, jours vides.
-Tutoie la secretaire. Sois direct, pas de blabla.
+Donne 2-3 conseils concrets (max 200 chars total) sur equilibrage jours, charge matin/apm, doubles bookings, jours vides.
+Tutoie la secretaire.
 
-Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema:
-{"suggestions": "Texte conseil court avec retours a la ligne separant les points."}
+JSON pur : {"suggestions":"conseil1\\nconseil2"}
 """.formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson);
     }
 
     private String buildIntroPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
         return """
-Tu rediges l'introduction d'un email envoye a un etudiant de l'Institut Superieur du Digital (Cote d'Ivoire).
-Filiere : %s, Niveau : %s. Emploi du temps de la semaine du %s au %s.
-Liste des cours JSON : %s
+Intro mail EDT %s %s, semaine %s au %s, cours : %s
 
-Redige UN paragraphe court (2-3 phrases max, 200 caracteres max) chaleureux et informatif.
-Mentionne le nombre de cours, les jours couverts, et un encouragement bref.
-Ton : professionnel mais bienveillant. Vouvoiement.
-Pas d'emoji obligatoire mais 1 max si pertinent. Pas de "Bonjour" ni de "Cordialement" (deja dans l'email).
+Redige 1 paragraphe court (2 phrases max, 150 chars). Vouvoiement. Mentionne nombre cours + jours.
+Pas de "Bonjour" ni "Cordialement".
 
-Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema:
-{"intro": "Paragraphe redige."}
+JSON pur : {"intro":"texte"}
 """.formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson);
     }
 
     private String buildAnalysePrompt(String dispos) {
         return """
-Tu es un analyste de planning scolaire. Voici les disponibilites soumises par les professeurs (JSON) :
-%s
+Analyse les disponibilites profs (JSON) : %s
 
-Analyse cette liste pour la secretaire de l'Institut Superieur du Digital. Couvre :
-- Couverture (jours / horaires bien/mal couverts)
-- Profs avec peu de creneaux (a relancer)
-- Recommandations actionnables
-
-Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema strict :
-{
-  "analyse": "Paragraphe d'analyse synthetique (4-6 phrases max).",
-  "nombreCreneaux": <nombre total>,
-  "recommandations": "Liste de 2-3 actions concretes separees par retours a la ligne."
-}
+Reponds en JSON pur :
+{"analyse":"3 phrases max sur la couverture jours/horaires","recommandations":"2 actions courtes separees par \\n"}
 """.formatted(dispos);
     }
 
