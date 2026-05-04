@@ -98,7 +98,7 @@ public class IaService {
         }
     }
 
-    /** Appel HTTP générique vers l'API Gemini avec mode JSON natif. */
+    /** Appel HTTP générique vers l'API Gemini avec fallback automatique sur gemini-2.5-flash si 503/UNAVAILABLE. */
     @SuppressWarnings({"unchecked","rawtypes"})
     private Map<String,Object> appelerGemini(String prompt, int maxTokens, String contexte) throws Exception {
         Map<String,Object> body = Map.of(
@@ -112,9 +112,23 @@ public class IaService {
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
         h.set("x-goog-api-key", apiKey);
-        String url = apiUrl.replace("{model}", model);
 
-        ResponseEntity<Map> resp = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, h), Map.class);
+        ResponseEntity<Map> resp;
+        try {
+            String url = apiUrl.replace("{model}", model);
+            resp = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, h), Map.class);
+        } catch (org.springframework.web.client.HttpServerErrorException | org.springframework.web.client.HttpClientErrorException ex) {
+            // Fallback automatique : si modele preview surcharge (503) ou rate-limited (429), on bascule sur gemini-2.5-flash stable
+            int code = ex.getStatusCode().value();
+            String FALLBACK = "gemini-2.5-flash";
+            if ((code == 503 || code == 429 || code >= 500) && !FALLBACK.equals(model)) {
+                log.warn("Gemini {} indisponible (HTTP {}). Fallback automatique sur {}", model, code, FALLBACK);
+                String fallbackUrl = apiUrl.replace("{model}", FALLBACK);
+                resp = restTemplate.exchange(fallbackUrl, HttpMethod.POST, new HttpEntity<>(body, h), Map.class);
+            } else {
+                throw ex;
+            }
+        }
         List<Map<String,Object>> candidates = (List<Map<String,Object>>) resp.getBody().get("candidates");
         if (candidates == null || candidates.isEmpty())
             throw new RuntimeException("Réponse Gemini vide");
