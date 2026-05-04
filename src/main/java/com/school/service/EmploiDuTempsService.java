@@ -20,6 +20,7 @@ public class EmploiDuTempsService {
     private final ModuleRepository moduleRepo;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
+    private final IaService iaService;
     @Value("${n8n.webhook.url}") private String n8nUrl;
     public List<EmploiDuTemps> findAll(){return edtRepo.findAllByOrderByDateCreationDesc();}
     @Transactional
@@ -100,14 +101,19 @@ public class EmploiDuTempsService {
     }
 
     @Transactional
+    @SuppressWarnings("unchecked")
     public Map<String,Object> envoyer(Long id){
         EmploiDuTemps edt=edtRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("EDT",id));
         List<String> emails=etudRepo.findByFiliereAndNiveau(edt.getFiliere(),edt.getNiveau()).stream().map(Etudiant::getEmail).toList();
         try{
+            List<Map<String,Object>> creneaux=objectMapper.readValue(edt.getCreneauxJson(),List.class);
+            // Genere une intro IA personnalisee pour l'email etudiant (Option 2)
+            String introIA=iaService.genererIntroEmail(edt.getFiliere(),edt.getNiveau(),edt.getSemaineDu().toString(),edt.getSemaineAu().toString(),creneaux);
             Map<String,Object> payload=new LinkedHashMap<>();
             payload.put("emploiDuTempsId",edt.getId());payload.put("filiere",edt.getFiliere());payload.put("niveau",edt.getNiveau());
             payload.put("semaineDu",edt.getSemaineDu().toString());payload.put("semaineAu",edt.getSemaineAu().toString());
-            payload.put("creneaux",objectMapper.readValue(edt.getCreneauxJson(),List.class));payload.put("destinataires",emails);
+            payload.put("creneaux",creneaux);payload.put("destinataires",emails);
+            payload.put("introIA",introIA);
             HttpHeaders h=new HttpHeaders();h.setContentType(MediaType.APPLICATION_JSON);
             restTemplate.postForEntity(n8nUrl,new HttpEntity<>(payload,h),String.class);
             edt.setStatut("ENVOYE");edtRepo.save(edt);

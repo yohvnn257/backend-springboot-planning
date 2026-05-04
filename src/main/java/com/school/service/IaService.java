@@ -20,38 +20,81 @@ public class IaService {
     @Value("${gemini.api.url}") private String apiUrl;
     @Value("${gemini.model}") private String model;
 
+    /**
+     * Donne des CONSEILS textuels sur l'EDT (pas de modification automatique).
+     * Retourne : { suggestions: "...", iaActive: bool, edtTemplate: {...} }
+     * Le edtTemplate est genere localement (deterministe) pour le rendu HTML email.
+     */
     public Map<String,Object> optimiserEdt(String filiere, String niveau, String semaineDu, String semaineAu, List<Map<String,Object>> creneaux) {
+        Map<String,Object> base = new LinkedHashMap<>();
+        base.put("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneaux));
+        base.put("creneauxOptimises", creneaux);
+
         if (apiKey == null || apiKey.isBlank()) {
-            return Map.ofEntries(
-                Map.entry("creneauxOptimises", creneaux),
-                Map.entry("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneaux)),
-                Map.entry("suggestions", "IA non configurée — ajoutez GEMINI_API_KEY dans Render."),
-                Map.entry("iaActive", false)
-            );
+            base.put("suggestions", "IA non configuree — ajoutez GEMINI_API_KEY dans Render.");
+            base.put("iaActive", false);
+            return base;
         }
         try {
             String creneauxJson = objectMapper.writeValueAsString(creneaux);
-            // Prompt compact: on demande SEULEMENT suggestions + creneauxOptimises (le edtTemplate est calcule cote backend)
-            String prompt = buildEdtPromptCompact(filiere, niveau, semaineDu, semaineAu, creneauxJson);
-            Map<String,Object> response = appelerGemini(prompt, 4096, "optimiserEdt");
-            // edtTemplate genere en backend a partir des creneaux optimises (ou bruts si Gemini a deconne)
-            @SuppressWarnings("unchecked")
-            List<Map<String,Object>> creneauxFinaux = (List<Map<String,Object>>) response.getOrDefault("creneauxOptimises", creneaux);
-            if (creneauxFinaux == null || creneauxFinaux.isEmpty()) creneauxFinaux = creneaux;
-            // CRITICAL: normaliser les creneaux Gemini -> ajouter jourNom + completer champs manquants
-            // depuis les creneaux d'origine (Gemini peut omettre ces champs)
-            creneauxFinaux = normaliserCreneaux(creneauxFinaux, creneaux, filiere, niveau);
-            response.put("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneauxFinaux));
-            response.put("creneauxOptimises", creneauxFinaux);
-            return response;
+            String prompt = buildConseilsPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
+            Map<String,Object> response = appelerGemini(prompt, 1024, "conseilsEdt");
+            String suggestions = (String) response.getOrDefault("suggestions", "");
+            base.put("suggestions", suggestions.isBlank() ? "L'IA n'a pas retourne de conseil." : suggestions);
+            base.put("iaActive", true);
+            return base;
         } catch (Exception e) {
             log.error("Erreur Gemini API (optimiserEdt): {}", e.getMessage());
-            return Map.ofEntries(
-                Map.entry("creneauxOptimises", creneaux),
-                Map.entry("edtTemplate", fallbackEdtTemplate(filiere, niveau, semaineDu, semaineAu, creneaux)),
-                Map.entry("suggestions", "Erreur IA: " + e.getMessage()),
-                Map.entry("iaActive", false)
-            );
+            base.put("suggestions", "Erreur IA: " + e.getMessage());
+            base.put("iaActive", false);
+            return base;
+        }
+    }
+
+    /** Genere un message d'introduction personnalise pour l'email EDT envoye aux etudiants. */
+    public String genererIntroEmail(String filiere, String niveau, String semaineDu, String semaineAu, List<Map<String,Object>> creneaux) {
+        String fallback = "Voici votre emploi du temps pour la semaine du " + semaineDu + " au " + semaineAu + ". Bonne semaine !";
+        if (apiKey == null || apiKey.isBlank()) return fallback;
+        try {
+            String creneauxJson = objectMapper.writeValueAsString(creneaux);
+            String prompt = buildIntroPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
+            Map<String,Object> response = appelerGemini(prompt, 256, "introEmail");
+            String texte = (String) response.getOrDefault("intro", "");
+            return texte.isBlank() ? fallback : texte;
+        } catch (Exception e) {
+            log.warn("Gemini intro email indisponible : {}", e.getMessage());
+            return fallback;
+        }
+    }
+
+    /** Analyse les disponibilites soumises par les profs. */
+    public Map<String,Object> analyserDisponibilites(List<Map<String,Object>> dispos) {
+        Map<String,Object> base = new LinkedHashMap<>();
+        if (apiKey == null || apiKey.isBlank()) {
+            base.put("analyse", "IA non configuree — ajoutez GEMINI_API_KEY dans Render.");
+            base.put("iaActive", false);
+            return base;
+        }
+        if (dispos == null || dispos.isEmpty()) {
+            base.put("analyse", "Aucune disponibilite a analyser.");
+            base.put("iaActive", true);
+            return base;
+        }
+        try {
+            String json = objectMapper.writeValueAsString(dispos);
+            String prompt = buildAnalysePrompt(json);
+            Map<String,Object> response = appelerGemini(prompt, 800, "analyserDispos");
+            String analyse = (String) response.getOrDefault("analyse", "");
+            base.put("analyse", analyse.isBlank() ? "L'IA n'a pas retourne d'analyse." : analyse);
+            base.put("nombreCreneaux", response.getOrDefault("nombreCreneaux", dispos.size()));
+            base.put("recommandations", response.getOrDefault("recommandations", ""));
+            base.put("iaActive", true);
+            return base;
+        } catch (Exception e) {
+            log.error("Erreur Gemini API (analyserDispos): {}", e.getMessage());
+            base.put("analyse", "Erreur IA: " + e.getMessage());
+            base.put("iaActive", false);
+            return base;
         }
     }
 
@@ -104,162 +147,54 @@ public class IaService {
         }
     }
 
-    /**
-     * Normalise les creneaux retournes par Gemini :
-     * - Ajoute jourNom (Lundi/Mardi/.../Vendredi) calcule depuis le champ jour ISO
-     * - Complete module/professeur/salle depuis les creneaux d'origine si manquants
-     * - Garantit filiere/niveau presents
-     * Sans cette etape, l'EDT s'affiche vide cote frontend (la grille filtre par jourNom).
-     */
-    private List<Map<String,Object>> normaliserCreneaux(List<Map<String,Object>> ia, List<Map<String,Object>> origine, String filiere, String niveau) {
-        List<Map<String,Object>> out = new ArrayList<>();
-        for (Map<String,Object> c : ia) {
-            if (c == null) continue;
-            Map<String,Object> n = new LinkedHashMap<>(c);
-            // 1. jourNom : recalcule depuis jour ISO (Gemini ne le retourne pas dans le prompt compact)
-            String jour = (String) n.get("jour");
-            if (jour != null && !jour.isBlank()) {
-                try {
-                    LocalDate d = LocalDate.parse(jour);
-                    n.put("jourNom", getNomJourFr(d.getDayOfWeek().getValue()));
-                } catch (Exception ignored) {}
-            }
-            // 2. Si certains champs manquent, on tente de les recuperer depuis les creneaux d'origine matchant jour+heure
-            if (origine != null) {
-                Map<String,Object> match = origine.stream().filter(o ->
-                    Objects.equals(o.get("jour"), n.get("jour")) &&
-                    Objects.equals(o.get("heureDebut"), n.get("heureDebut"))
-                ).findFirst().orElse(null);
-                if (match != null) {
-                    n.putIfAbsent("module", match.get("module"));
-                    n.putIfAbsent("professeur", match.get("professeur"));
-                    n.putIfAbsent("salle", match.get("salle"));
-                }
-            }
-            // 3. Defaults
-            n.putIfAbsent("module", "(à compléter)");
-            n.putIfAbsent("professeur", "");
-            n.putIfAbsent("salle", "");
-            n.putIfAbsent("filiere", filiere);
-            n.putIfAbsent("niveau", niveau);
-            out.add(n);
-        }
-        return out;
-    }
-
-    private String getNomJourFr(int dayOfWeek) {
-        return switch (dayOfWeek) {
-            case 1 -> "Lundi"; case 2 -> "Mardi"; case 3 -> "Mercredi";
-            case 4 -> "Jeudi"; case 5 -> "Vendredi";
-            case 6 -> "Samedi"; case 7 -> "Dimanche";
-            default -> "";
-        };
-    }
-
-    private String buildEdtPromptCompact(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
+    private String buildConseilsPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
         return """
-Tu es un planificateur academique expert de l'Institut Superieur du Digital.
-
+Tu es un planificateur academique expert de l'Institut Superieur du Digital (Cote d'Ivoire).
 Contexte: Filiere=%s, Niveau=%s, Semaine du %s au %s
-Creneaux disponibles (JSON): %s
+Creneaux planifies (JSON): %s
 
-Mission: analyser ces creneaux et proposer une organisation optimale.
-Regles: max 2 cours/jour par groupe, equilibrer la semaine, preferer le matin, eviter collisions prof/salle.
+Analyse cette planification et donne 2-3 conseils concrets et actionnables (max 250 caracteres au total).
+Verifie : equilibrage des jours, charge matin/apres-midi, doubles bookings prof/salle, jours vides.
+Tutoie la secretaire. Sois direct, pas de blabla.
 
-Reponds UNIQUEMENT en JSON valide (PAS de markdown ```), schema strict:
-{
-  "suggestions": "phrase courte d'analyse et recommandation actionnable (1-2 phrases max)",
-  "creneauxOptimises": [
-    {"jour":"YYYY-MM-DD","heureDebut":"HH:mm","heureFin":"HH:mm","module":"...","professeur":"...","salle":"...","filiere":"%s","niveau":"%s"}
-  ]
-}
-
-Garde EXACTEMENT les memes module/professeur/salle qu'en entree. Tu peux reorganiser/supprimer des creneaux mais pas en inventer.
-""".formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson, filiere, niveau);
-    }
-
-    private String buildEdtPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
-        return """
-Tu es un planificateur académique expert de l'Institut Supérieur du Digital.
-Objectif: générer un EDT hebdomadaire STRICTEMENT exploitable par un template HTML n8n.
-
-Contexte:
-- Filière: %s
-- Niveau: %s
-- Semaine du: %s
-- Semaine au: %s
-- Données source (créneaux disponibles): %s
-
-Contraintes métier:
-1) Respecter uniquement les créneaux fournis.
-2) Pas de collision d'horaires pour une même journée.
-3) Équilibrer la semaine (éviter surcharge d'un seul jour).
-4) Préserver les informations pédagogiques: module/matière, professeur, salle.
-5) Produire des fusions verticales via rowSpan quand un cours couvre plusieurs lignes horaires.
-
-Contraintes de sortie:
-- Réponds UNIQUEMENT en JSON valide (sans markdown, sans commentaire, sans texte hors JSON).
-- Toutes les dates au format YYYY-MM-DD.
-- Toutes les heures au format HH:mm.
-- Le tableau doit pouvoir afficher exactement:
-  * En-tête logo "Institut Supérieur du Digital"
-  * Titre EXACTEMENT au format "EMPLOI DU TEMPS (J1 - J2 MOIS YYYY)" en majuscules (mois en lettres FR : JANVIER, FEVRIER...)
-    Exemples : "EMPLOI DU TEMPS (27 - 30 AVRIL 2026)" si meme mois, "EMPLOI DU TEMPS (29 AVRIL - 3 MAI 2026)" si mois differents
-  * Sous-titre EXACTEMENT au format "LICENCE N : FILIERE" (LICENCE 1/2/3) ou "MASTER N : FILIERE" (MASTER 1/2), filiere en MAJUSCULES
-    Exemples : "LICENCE 3 : DEVELOPPEMENT WEB", "MASTER 2 : MARKETING DIGITAL"
-  * Colonnes Heures + Lundi..Vendredi (date incluse)
-  * Séparateur matin/après-midi (fond bleu)
-  * Note bas de page en rouge
-
-Schéma JSON attendu:
-{
-  "suggestions": "analyse courte et actionnable",
-  "creneauxOptimises": [
-    {
-      "jour": "YYYY-MM-DD",
-      "heureDebut": "HH:mm",
-      "heureFin": "HH:mm",
-      "module": "string",
-      "professeur": "string",
-      "salle": "string"
-    }
-  ],
-  "edtTemplate": {
-    "institution": "Institut Supérieur du Digital",
-    "titre": "EMPLOI DU TEMPS (...)",
-    "sousTitre": "NIVEAU : FILIERE",
-    "noteBasPage": "NB : L'emploi du temps n'est pas définitif. Il peut toujours subir des modifications.",
-    "colonnes": [
-      "Heures",
-      "Lundi DD/MM/YYYY",
-      "Mardi DD/MM/YYYY",
-      "Mercredi DD/MM/YYYY",
-      "Jeudi DD/MM/YYYY",
-      "Vendredi DD/MM/YYYY"
-    ],
-    "lignes": [
-      {
-        "heureLabel": "08H-09H",
-        "cells": [
-          {"type":"empty","rowSpan":1},
-          {"type":"course","rowSpan":2,"module":"...","professeur":"...","salle":"..."},
-          {"type":"skip"},
-          {"type":"empty","rowSpan":1},
-          {"type":"empty","rowSpan":1}
-        ]
-      }
-    ],
-    "separateurs": [2]
-  }
-}
-
-Règles "cells":
-- Exactement 5 cellules (lundi à vendredi) par ligne.
-- type=course => module/professeur/salle obligatoires + rowSpan >= 1.
-- type=empty => rowSpan >= 1.
-- type=skip => cellule couverte par la fusion verticale d'une ligne précédente.
-- Toute fusion verticale doit être cohérente: les lignes suivantes doivent utiliser type=skip.
+Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema:
+{"suggestions": "Texte conseil court avec retours a la ligne separant les points."}
 """.formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson);
+    }
+
+    private String buildIntroPrompt(String filiere, String niveau, String semaineDu, String semaineAu, String creneauxJson) {
+        return """
+Tu rediges l'introduction d'un email envoye a un etudiant de l'Institut Superieur du Digital (Cote d'Ivoire).
+Filiere : %s, Niveau : %s. Emploi du temps de la semaine du %s au %s.
+Liste des cours JSON : %s
+
+Redige UN paragraphe court (2-3 phrases max, 200 caracteres max) chaleureux et informatif.
+Mentionne le nombre de cours, les jours couverts, et un encouragement bref.
+Ton : professionnel mais bienveillant. Vouvoiement.
+Pas d'emoji obligatoire mais 1 max si pertinent. Pas de "Bonjour" ni de "Cordialement" (deja dans l'email).
+
+Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema:
+{"intro": "Paragraphe redige."}
+""".formatted(filiere, niveau, semaineDu, semaineAu, creneauxJson);
+    }
+
+    private String buildAnalysePrompt(String dispos) {
+        return """
+Tu es un analyste de planning scolaire. Voici les disponibilites soumises par les professeurs (JSON) :
+%s
+
+Analyse cette liste pour la secretaire de l'Institut Superieur du Digital. Couvre :
+- Couverture (jours / horaires bien/mal couverts)
+- Profs avec peu de creneaux (a relancer)
+- Recommandations actionnables
+
+Reponds UNIQUEMENT en JSON valide (PAS de markdown), schema strict :
+{
+  "analyse": "Paragraphe d'analyse synthetique (4-6 phrases max).",
+  "nombreCreneaux": <nombre total>,
+  "recommandations": "Liste de 2-3 actions concretes separees par retours a la ligne."
+}
+""".formatted(dispos);
     }
 
     private Map<String,Object> fallbackEdtTemplate(String filiere, String niveau, String semaineDu, String semaineAu, List<Map<String,Object>> creneaux) {
