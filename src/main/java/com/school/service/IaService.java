@@ -38,7 +38,7 @@ public class IaService {
         try {
             String creneauxJson = objectMapper.writeValueAsString(creneaux);
             String prompt = buildConseilsPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
-            Map<String,Object> response = appelerGemini(prompt, 1024, "conseilsEdt");
+            Map<String,Object> response = appelerGemini(prompt, 4096, "conseilsEdt");
             String suggestions = (String) response.getOrDefault("suggestions", "");
             base.put("suggestions", suggestions.isBlank() ? "L'IA n'a pas retourne de conseil." : suggestions);
             base.put("iaActive", true);
@@ -58,7 +58,7 @@ public class IaService {
         try {
             String creneauxJson = objectMapper.writeValueAsString(creneaux);
             String prompt = buildIntroPrompt(filiere, niveau, semaineDu, semaineAu, creneauxJson);
-            Map<String,Object> response = appelerGemini(prompt, 256, "introEmail");
+            Map<String,Object> response = appelerGemini(prompt, 1024, "introEmail");
             String texte = (String) response.getOrDefault("intro", "");
             return texte.isBlank() ? fallback : texte;
         } catch (Exception e) {
@@ -83,7 +83,7 @@ public class IaService {
         try {
             String json = objectMapper.writeValueAsString(dispos);
             String prompt = buildAnalysePrompt(json);
-            Map<String,Object> response = appelerGemini(prompt, 800, "analyserDispos");
+            Map<String,Object> response = appelerGemini(prompt, 4096, "analyserDispos");
             String analyse = (String) response.getOrDefault("analyse", "");
             base.put("analyse", analyse.isBlank() ? "L'IA n'a pas retourne d'analyse." : analyse);
             base.put("nombreCreneaux", response.getOrDefault("nombreCreneaux", dispos.size()));
@@ -157,6 +157,12 @@ public class IaService {
             return result;
         } catch (Exception parseError) {
             log.error("Gemini {} JSON invalide (finishReason={}, longueur={}). Debut: {}", contexte, finishReason, json.length(), json.substring(0, Math.min(200, json.length())));
+            // Retry auto si MAX_TOKENS et qu'on n'est pas deja a la limite (16384 = budget large pour 2.5 Flash)
+            if ("MAX_TOKENS".equals(String.valueOf(finishReason)) && maxTokens < 16384) {
+                int newMax = Math.min(maxTokens * 2, 16384);
+                log.warn("Gemini {} retry avec maxTokens={} (etait {})", contexte, newMax, maxTokens);
+                return appelerGemini(prompt, newMax, contexte + "-retry");
+            }
             throw new RuntimeException("JSON Gemini invalide ou tronque (finishReason=" + finishReason + ")");
         }
     }
