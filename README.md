@@ -123,6 +123,8 @@ Application accessible sur `http://localhost:4200`.
 | 4. Maintenance | [docs/MAINTENANCE.md](docs/MAINTENANCE.md) | Système de tickets, procédures, évolutions |
 | 5. Onboarding | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Tutoriel pas-à-pas pour les utilisateurs finaux |
 | Démo | [docs/SCRIPT_DEMO_VIDEO.md](docs/SCRIPT_DEMO_VIDEO.md) | Script de la vidéo de présentation |
+| 🎥 **Vidéo de démonstration** | **[VIDEO_DEMO_LINK_HERE](VIDEO_DEMO_LINK_HERE)** *(remplacer par lien Loom après tournage)* | Démo complète 6 minutes |
+| Évolutions | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Journal des améliorations |
 
 ---
 
