@@ -80,7 +80,7 @@ OUVERT ───► EN_COURS ───► RESOLU
 | Logs erreurs | Render Logs | Stack traces récurrentes |
 | Disponibilité frontend | Vercel Analytics | Build failed |
 | Quota DB | Neon Dashboard | > 80% du quota Free |
-| Coût Anthropic | console.anthropic.com | Pic anormal de tokens |
+| Coût Google | aistudio.google.com/apikey | Pic anormal de tokens |
 
 ### 2.2 Logs
 
@@ -153,9 +153,9 @@ Au prochain démarrage, Flyway l'appliquera automatiquement. **Tester d'abord en
 4. **Save** + **Activate**
 5. Exporter le JSON et commiter dans `n8n-workflows/`
 
-### 3.4 Améliorer le prompt Claude
+### 3.4 Améliorer le prompt Gemini
 
-Le prompt est centralisé dans [`ClaudeService.java`](../src/main/java/com/school/service/ClaudeService.java).
+Le prompt est centralisé dans [`IaService.java`](../src/main/java/com/school/service/IaService.java).
 
 1. Modifier la chaîne `prompt = "Tu es un expert..."`
 2. Tester localement avec une vraie clé API
@@ -197,11 +197,11 @@ Le prompt est centralisé dans [`ClaudeService.java`](../src/main/java/com/schoo
 3. Vérifier que le workflow n8n est **activé**
 4. Vérifier les credentials Gmail dans n8n (token expiré ?)
 
-### 4.4 Claude IA ne répond plus
+### 4.4 Gemini IA ne répond plus
 
 1. Vérifier `GET /api/ia/statut` → champ `actif` doit être `true`
-2. Si `false` → vérifier `ANTHROPIC_API_KEY` dans Render
-3. Vérifier le quota / facturation sur console.anthropic.com
+2. Si `false` → vérifier `GEMINI_API_KEY` dans Render
+3. Vérifier le quota / facturation sur aistudio.google.com/apikey
 4. Le système a un **fallback gracieux** : sans IA, les EDT sont quand même générés (créneaux non optimisés)
 
 ### 4.5 Migration Flyway échoue au démarrage
@@ -248,5 +248,5 @@ Maintenir un `CHANGELOG.md` à la racine pour chaque version (à initier en V1.1
 | Hébergement Render | Dashboard du compte Render |
 | Hébergement Vercel | Dashboard du compte Vercel |
 | Base de données Neon | console.neon.tech |
-| Support Anthropic | https://support.anthropic.com |
+| Support Google | https://support.anthropic.com |
 | Support Twilio | https://www.twilio.com/help |

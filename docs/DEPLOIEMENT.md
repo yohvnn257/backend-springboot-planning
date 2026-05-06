@@ -22,7 +22,7 @@
 - Compte **Vercel** (gratuit)
 - Compte **Neon** (gratuit — 0.5 Go DB)
 - Compte **n8n Cloud** (essai gratuit) **ou** instance self-hosted
-- Compte **Anthropic** avec clé API (ou laisser l'IA désactivée)
+- Compte **Google** avec clé API (ou laisser l'IA désactivée)
 - Compte **Google** + activation Gmail OAuth2 dans n8n
 - Compte **Twilio** + Sandbox WhatsApp activée
 
@@ -48,8 +48,8 @@
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://ep-xxx.eu-central-1.aws.neon.tech/school_db?sslmode=require` | Neon Dashboard |
 | `SPRING_DATASOURCE_USERNAME` | `school_user` | Neon Dashboard |
 | `SPRING_DATASOURCE_PASSWORD` | `********` | Neon Dashboard |
-| `ANTHROPIC_API_KEY` | `sk-ant-api03-...` | console.anthropic.com |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | (défaut OK) |
+| `GEMINI_API_KEY` | `sk-ant-api03-...` | aistudio.google.com/apikey |
+| `ANTHROPIC_MODEL` | `gemini-2.5-flash` | (défaut OK) |
 | `N8N_WEBHOOK_URL` | `https://<n8n-host>/webhook/emploi-du-temps` | n8n workflow 2 |
 | `N8N_EMAIL_TRIGGER_URL` | `https://<n8n-host>/webhook/email-trigger` | n8n workflow 1 |
 | `APP_FRONTEND_URL` | `https://eduschedule.vercel.app` | URL Vercel |
@@ -162,7 +162,7 @@ Dans **n8n → Credentials**, créer :
 1. **Gmail OAuth2** (Settings → Credentials → New → Gmail OAuth2)
 2. **Twilio API** (Account SID + Auth Token depuis console.twilio.com)
 
-⚠️ **Plus besoin de credential Anthropic dans n8n** — Claude est désormais centralisé dans le backend Spring.
+⚠️ **Plus besoin de credential Google dans n8n** — Gemini est désormais centralisé dans le backend Spring.
 
 ### 6.4 Activation et URLs
 
@@ -227,7 +227,7 @@ curl https://backend-springboot-planning.onrender.com/api/statut
 
 # Statut IA
 curl https://backend-springboot-planning.onrender.com/api/ia/statut
-# → {"actif":true,"modele":"claude-sonnet-4-6","message":"Claude IA connecté ✅"}
+# → {"actif":true,"modele":"gemini-2.5-flash","message":"Gemini IA connecté ✅"}
 ```
 
 ### 8.2 Test bout-en-bout
@@ -269,6 +269,6 @@ Vercel garde tous les déploiements. Pour rollback :
 | Vercel | Hobby | 0 € |
 | Neon | Free (0.5 Go) | 0 € |
 | n8n Cloud | Trial puis Starter | 0–20 € |
-| Anthropic | Pay-per-use | ~1–5 € (faible volume) |
+| Google | Pay-per-use | ~1–5 € (faible volume) |
 | Twilio | Sandbox WhatsApp | 0 € (limites de test) |
 | **Total** | | **~0–25 €/mois** |

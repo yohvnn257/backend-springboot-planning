@@ -33,7 +33,7 @@
 
 **À l'écran** : ouvrir [docs/ARCHITECTURE.md](ARCHITECTURE.md) et montrer le schéma
 
-> *"Côté technique, EduSchedule combine quatre briques : un backend Spring Boot en Java 21 hébergé sur Render, un frontend Angular 19 sur Vercel, une base PostgreSQL chez Neon, et n8n comme orchestrateur visuel. Le pattern central est 'LLM-as-Microservice' : Claude IA d'Anthropic est encapsulé dans le backend, ce qui garantit une seule clé API, un seul prompt versionné, et des logs unifiés."*
+> *"Côté technique, EduSchedule combine quatre briques : un backend Spring Boot en Java 21 hébergé sur Render, un frontend Angular 19 sur Vercel, une base PostgreSQL chez Neon, et n8n comme orchestrateur visuel. Le pattern central est 'LLM-as-Microservice' : Gemini IA d'Google est encapsulé dans le backend, ce qui garantit une seule clé API, un seul prompt versionné, et des logs unifiés."*
 
 ### Séquence 3 — Configuration des données (45 sec)
 
@@ -71,15 +71,15 @@
 
 **Retour Dashboard** : montrer le statut "✅ Répondu"
 
-### Séquence 6 — Génération de l'EDT avec Claude IA (1 min 30)
+### Séquence 6 — Génération de l'EDT avec Gemini IA (1 min 30)
 
 **À l'écran** : menu IA → cliquer "Analyser"
 
-> *"Avant de générer, je peux demander à Claude d'analyser les disponibilités. Il me dit s'il y a assez de créneaux, suggère des relances éventuelles."*
+> *"Avant de générer, je peux demander à Gemini d'analyser les disponibilités. Il me dit s'il y a assez de créneaux, suggère des relances éventuelles."*
 
-**Attendre la réponse Claude**
+**Attendre la réponse Gemini**
 
-> *"Claude répond ici en 3-5 secondes."*
+> *"Gemini répond ici en 3-5 secondes."*
 
 **Menu Emploi du temps → Générer**
 
@@ -101,11 +101,11 @@
 
 **Basculer sur n8n** : montrer le workflow 2 en exécution
 
-> *"Ce workflow appelle d'abord l'endpoint `/api/ia/optimiser-edt` du backend — c'est ici que Claude réorganise les créneaux pour équilibrer la semaine. Puis n8n génère un email HTML stylé et l'envoie à tous les étudiants de la filière."*
+> *"Ce workflow appelle d'abord l'endpoint `/api/ia/optimiser-edt` du backend — c'est ici que Gemini réorganise les créneaux pour équilibrer la semaine. Puis n8n génère un email HTML stylé et l'envoie à tous les étudiants de la filière."*
 
 **Basculer sur Gmail étudiant** : montrer l'email reçu
 
-> *"Voici l'email reçu par l'étudiant. La grille est imprimable, et un bandeau indique que l'EDT a été optimisé par Claude IA."*
+> *"Voici l'email reçu par l'étudiant. La grille est imprimable, et un bandeau indique que l'EDT a été optimisé par Gemini IA."*
 
 ### Séquence 8 — Système de tickets (45 sec)
 

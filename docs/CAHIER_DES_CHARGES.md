@@ -124,7 +124,7 @@
 [Backend : POST n8n workflow 2 avec créneaux + emails étudiants]
        │
        ▼
-[n8n : POST /api/ia/optimiser-edt → Claude optimise]
+[n8n : POST /api/ia/optimiser-edt → Gemini optimise]
        │
        ▼
 [n8n : génération HTML stylé + envoi Gmail à chaque étudiant]
@@ -184,7 +184,7 @@ Projet **mono-développeur** (contexte académique). Le porteur assume :
 - **Approche itérative** : développement par feature complète (vertical slice)
 - **Versioning** : Git, branche unique `main` (mono-dev)
 - **Commits conventionnels** : `feat:`, `fix:`, `chore:`, `docs:`
-- **Outil d'assistance** : Claude Code (Anthropic) pour le pair-programming
+- **Outil d'assistance** : Gemini Code (Google) pour le pair-programming
 
 ### 7.3 Planning macroscopique
 
@@ -205,12 +205,12 @@ Projet **mono-développeur** (contexte académique). Le porteur assume :
 
 - Hébergement gratuit obligatoire (budget étudiant) → Render Free, Vercel Free, Neon Free.
 - Le plan free Render fait dormir le backend après 15 min d'inactivité (cold start ~30s acceptable).
-- Quota Anthropic limité → fallback sans IA si clé absente ou erreur.
+- Quota Google limité → fallback sans IA si clé absente ou erreur.
 
 ### 8.2 Contraintes RNCP
 
 - Doit utiliser au moins **un outil NoCode** → n8n.
-- Doit intégrer une **dimension IA** → Claude Sonnet 4.6.
+- Doit intégrer une **dimension IA** → Gemini 2.5 Flash.
 - Doit avoir un **système de tickets** → module dédié implémenté.
 - Doit être **accessible en ligne** → Render + Vercel.
 - Doit fournir une **documentation utilisateur claire** → guide + vidéo.
@@ -226,6 +226,6 @@ Le projet sera considéré comme livré et conforme si :
 - [x] Un EDT peut être généré de bout en bout depuis le dashboard
 - [x] Un email est effectivement envoyé à un professeur de test via le bot
 - [x] Une notification WhatsApp est envoyée via Twilio Sandbox
-- [x] Claude IA optimise l'EDT (visible dans le bandeau "🤖 Optimisé par Claude IA")
+- [x] Gemini IA optimise l'EDT (visible dans le bandeau "🤖 Optimisé par Gemini IA")
 - [x] Un ticket peut être créé et passer du statut OUVERT à RESOLU
 - [x] Toute la documentation listée en §6 est présente et à jour

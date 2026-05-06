@@ -27,13 +27,13 @@ EduSchedule est une application **3-tiers + orchestrateur NoCode**, conçue selo
               │   ┌──────────────────────────────────────────┐ │
               │   │ Controllers REST                         │ │
               │   │ Services métier (EmailService,           │ │
-              │   │   ClaudeService, EmploiDuTempsService…)  │ │
+              │   │   IaService, EmploiDuTempsService…)  │ │
               │   │ Repositories JPA                         │ │
               │   └────────┬──────────────────┬──────────────┘ │
               └────────────┼──────────────────┼────────────────┘
                            │                  │
                 ┌──────────▼─────┐   ┌────────▼─────────────┐
-                │  PostgreSQL    │   │  Anthropic Claude    │
+                │  PostgreSQL    │   │  Google Gemini    │
                 │  (Neon)        │   │  Sonnet 4.6          │
                 └────────────────┘   └──────────────────────┘
                            ▲
@@ -53,7 +53,7 @@ EduSchedule est une application **3-tiers + orchestrateur NoCode**, conçue selo
 
 ### 2.1 Pattern LLM-as-Microservice
 
-**Décision** : Claude est encapsulé dans le backend Spring (`ClaudeService`), exposé via REST (`/api/ia/*`). Ni le frontend ni n8n n'appellent l'API Anthropic directement.
+**Décision** : Gemini est encapsulé dans le backend Spring (`IaService`), exposé via REST (`/api/ia/*`). Ni le frontend ni n8n n'appellent l'API Google Gemini directement.
 
 **Justification** (cf. recherche [LLM-as-Microservice](https://shukriev.medium.com/llm-as-microservice-integration-patterns-and-trade-offs-f05b29945489), [AI Gateway pattern MLflow](https://mlflow.org/ai-gateway)) :
 - Une seule clé API à gérer (uniquement dans Render)
@@ -62,7 +62,7 @@ EduSchedule est une application **3-tiers + orchestrateur NoCode**, conçue selo
 - Logs unifiés dans Render
 - Testable en JUnit
 
-**Alternative écartée** : nœud "AI Agent" de n8n. Pertinent pour des workflows agentic (tool-calling autonome), inutile ici car nos appels Claude sont déterministes (input → output JSON).
+**Alternative écartée** : nœud "AI Agent" de n8n. Pertinent pour des workflows agentic (tool-calling autonome), inutile ici car nos appels Gemini sont déterministes (input → output JSON).
 
 ### 2.2 n8n comme orchestrateur dumb
 
@@ -170,7 +170,7 @@ com.school
 │   └── ResourceNotFoundException.java
 ├── repository/                    (Spring Data JPA)
 └── service/                       (logique métier)
-    ├── ClaudeService.java         (appels Anthropic API)
+    ├── IaService.java         (appels Google API)
     ├── EmailService.java          (bot email + tokens)
     ├── EmploiDuTempsService.java  (génération + envoi EDT)
     └── ProfesseurService, ModuleService, EtudiantService, DisponibiliteService
@@ -189,8 +189,8 @@ com.school
 | POST | `/api/emplois-du-temps/{id}/envoyer` | Déclenche n8n workflow 2 |
 | POST | `/api/webhook/preparer-envoi` | Génère tokens + retourne profs (appelé par n8n) |
 | POST | `/api/webhook/trigger-bot` | Déclenche n8n workflow 1 (depuis frontend) |
-| POST | `/api/ia/optimiser-edt` | Claude optimise un EDT |
-| POST | `/api/ia/analyser-disponibilites` | Claude analyse les disponibilités |
+| POST | `/api/ia/optimiser-edt` | Gemini optimise un EDT |
+| POST | `/api/ia/analyser-disponibilites` | Gemini analyse les disponibilités |
 | GET | `/api/tickets` | Liste tickets (filtre par statut) |
 | POST | `/api/tickets` | Création ticket |
 
@@ -211,7 +211,7 @@ src/app/modules/eduschedule/
 ├── disponibilites/   (consultation des créneaux)
 ├── emploi-du-temps/  (génération + envoi EDT)
 ├── repondre/         (formulaire public à token pour professeurs)
-├── ia/               (dashboard Claude IA)
+├── ia/               (dashboard Gemini IA)
 └── tickets/          (système de support)
 ```
 
@@ -256,7 +256,7 @@ Webhook /emploi-du-temps
    Préparer données (Set)
         │
         ▼
-   POST /api/ia/optimiser-edt (Claude via backend)
+   POST /api/ia/optimiser-edt (Gemini via backend)
         │
         ▼
    Fusion réponse IA (Set)
@@ -282,10 +282,10 @@ Webhook /emploi-du-temps
 - `IllegalArgumentException` → 400
 - Toute autre exception → 500 + log
 
-### 7.2 IA Claude
+### 7.2 IA Gemini
 
-- Si `ANTHROPIC_API_KEY` est absente → fallback : retourne les créneaux non optimisés + message explicite, `iaActive: false`
-- Si erreur réseau Anthropic → fallback identique
+- Si `GEMINI_API_KEY` est absente → fallback : retourne les créneaux non optimisés + message explicite, `iaActive: false`
+- Si erreur réseau Google → fallback identique
 - Le frontend affiche dynamiquement un bandeau "✅ Connecté" ou "⚠️ Clé API manquante"
 
 ### 7.3 n8n
@@ -322,5 +322,5 @@ Webhook /emploi-du-temps
 |---|---|---|
 | Switch Railway → Render | 2026-04-21 | Plan free plus généreux, healthcheck natif |
 | Switch DB locale → Neon | 2026-04-22 | Persistence cloud, pas de DB locale en prod |
-| Claude Sonnet 4.5 → 4.6 | 2026-04-23 | Modèle plus récent, meilleur ratio coût/qualité |
-| Centralisation Claude dans Spring | 2026-04-24 | Pattern LLM-as-Microservice (cf. §2.1) |
+| Gemini 2.5 Flash → 4.6 | 2026-04-23 | Modèle plus récent, meilleur ratio coût/qualité |
+| Centralisation Gemini dans Spring | 2026-04-24 | Pattern LLM-as-Microservice (cf. §2.1) |

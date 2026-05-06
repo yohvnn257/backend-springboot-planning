@@ -47,7 +47,7 @@ Le menu latéral propose 8 sections :
 | 👩‍🎓 | Étudiants | Liste des étudiants |
 | 🗓️ | Disponibilités | Créneaux saisis par les profs |
 | 📋 | Emploi du temps | Génération + envoi d'EDT |
-| 🤖 | IA | Tableau de bord Claude |
+| 🤖 | IA | Tableau de bord Gemini |
 | 🎫 | Tickets | Support utilisateur |
 
 ---
@@ -159,7 +159,7 @@ Aucune action requise. Vous recevrez un email automatiquement quand un nouvel em
 L'email contient :
 - Une **grille HTML** stylée (semaine du LL/MM au LL/MM)
 - Pour chaque créneau : matière, salle, professeur
-- Mention "Optimisé par Claude IA" si l'IA a été appliquée
+- Mention "Optimisé par Gemini IA" si l'IA a été appliquée
 
 Vous pouvez **imprimer** l'email directement (Ctrl+P) ou le sauvegarder en PDF.
 
@@ -169,11 +169,11 @@ Vous pouvez **imprimer** l'email directement (Ctrl+P) ou le sauvegarder en PDF.
 
 ### 6.1 (Optionnel) Pré-analyse par IA
 
-Avant de générer, vous pouvez demander à Claude d'analyser les disponibilités :
+Avant de générer, vous pouvez demander à Gemini d'analyser les disponibilités :
 
 1. Menu → **🤖 IA**
 2. Section **"Analyser les disponibilités"** → cliquer **"Analyser"**
-3. Claude affiche :
+3. Gemini affiche :
    - Si les disponibilités sont **suffisantes** pour un EDT cohérent
    - Le nombre de créneaux trouvés
    - Des **recommandations** si manque (ex : "relancer le prof X")
@@ -203,7 +203,7 @@ L'EDT apparaît dans la liste avec le statut **"📋 Généré"**.
 2. Bouton **"📤 Envoyer aux étudiants"** sur la ligne de l'EDT
 3. Le système :
    - Envoie l'EDT au workflow n8n
-   - n8n appelle Claude pour optimiser une dernière fois
+   - n8n appelle Gemini pour optimiser une dernière fois
    - n8n envoie un email HTML à chaque étudiant de la filière+niveau
 4. Le statut passe à **"✅ Envoyé"**
 
@@ -252,9 +252,9 @@ Tous les tickets sont visibles dans la liste avec leur statut :
 
 → Vérifier que le **module** du prof est bien créé. Sans module associé, le prof n'a rien à remplir.
 
-### "Claude IA dit 'Clé API manquante'"
+### "Gemini IA dit 'Clé API manquante'"
 
-→ Demander à l'admin de vérifier `ANTHROPIC_API_KEY` dans Render. Sans clé, l'EDT est quand même généré (mais sans optimisation).
+→ Demander à l'admin de vérifier `GEMINI_API_KEY` dans Render. Sans clé, l'EDT est quand même généré (mais sans optimisation).
 
 ### "Je ne reçois pas l'EDT par email"
 
