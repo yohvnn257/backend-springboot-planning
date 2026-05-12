@@ -5,135 +5,338 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "emploi-du-temps",
-        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "webhook-edt",
+      "id": "23fa3833-701f-4432-8572-5fad7092b65e",
       "name": "Webhook — Réception EDT",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [180, 360]
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "3ca7805b-45fc-4d03-9069-a6dedfa56811"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "f1", "name": "emploiDuTempsId", "value": "={{ $json.body?.emploiDuTempsId ?? $json.emploiDuTempsId }}", "type": "number" },
-            { "id": "f2", "name": "filiere",         "value": "={{ $json.body?.filiere ?? $json.filiere }}", "type": "string" },
-            { "id": "f3", "name": "niveau",          "value": "={{ $json.body?.niveau ?? $json.niveau }}", "type": "string" },
-            { "id": "f4", "name": "semaineDu",       "value": "={{ $json.body?.semaineDu ?? $json.semaineDu }}", "type": "string" },
-            { "id": "f5", "name": "semaineAu",       "value": "={{ $json.body?.semaineAu ?? $json.semaineAu }}", "type": "string" },
-            { "id": "f6", "name": "creneaux",        "value": "={{ $json.body?.creneaux ?? $json.creneaux ?? [] }}", "type": "array" },
-            { "id": "f7", "name": "destinataires",   "value": "={{ $json.body?.destinataires ?? $json.destinataires ?? [] }}", "type": "array" },
-            { "id": "f8", "name": "introIA",         "value": "={{ $json.body?.introIA ?? $json.introIA ?? '' }}", "type": "string" }
+            {
+              "id": "f1",
+              "name": "emploiDuTempsId",
+              "value": "={{ $json.body?.emploiDuTempsId ?? $json.emploiDuTempsId }}",
+              "type": "number"
+            },
+            {
+              "id": "f2",
+              "name": "filiere",
+              "value": "={{ $json.body?.filiere ?? $json.filiere }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "niveau",
+              "value": "={{ $json.body?.niveau ?? $json.niveau }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "semaineDu",
+              "value": "={{ $json.body?.semaineDu ?? $json.semaineDu }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "semaineAu",
+              "value": "={{ $json.body?.semaineAu ?? $json.semaineAu }}",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "creneaux",
+              "value": "={{ $json.body?.creneaux ?? $json.creneaux ?? [] }}",
+              "type": "array"
+            },
+            {
+              "id": "f7",
+              "name": "destinataires",
+              "value": "={{ $json.body?.destinataires ?? $json.destinataires ?? [] }}",
+              "type": "array"
+            }
           ]
         },
         "options": {}
       },
-      "id": "preparer-donnees",
+      "id": "3ece106b-1fee-4f73-a276-8d261f554d34",
       "name": "Préparer les données",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [380, 360]
+      "position": [
+        208,
+        0
+      ]
     },
     {
       "parameters": {
-        "url": "https://backend-springboot-planning.onrender.com/api/ia/optimiser-edt",
         "method": "POST",
+        "url": "https://backend-springboot-planning.onrender.com/api/ia/optimiser-edt",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ filiere: $json.filiere, niveau: $json.niveau, semaineDu: $json.semaineDu, semaineAu: $json.semaineAu, creneaux: $json.creneaux }) }}",
-        "options": { "timeout": 90000 }
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ filiere: $json.filiere, niveau: $json.niveau, semaineDu: $json.semaineDu, semaineAu: $json.semaineAu, creneaux: $json.creneaux }) }}",
+        "options": {
+          "timeout": 90000
+        }
       },
-      "id": "gemini-backend",
+      "id": "9df689a8-b801-47c4-ba62-95019405fed6",
       "name": "Gemini 3 Flash (via backend)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [580, 360],
-      "retryOnFail": true,
-      "maxTries": 5,
-      "waitBetweenTries": 10000,
+      "position": [
+        400,
+        0
+      ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "g1", "name": "emploiDuTempsId", "value": "={{ $('Préparer les données').item.json.emploiDuTempsId }}", "type": "number" },
-            { "id": "g2", "name": "filiere",        "value": "={{ $('Préparer les données').item.json.filiere }}",        "type": "string" },
-            { "id": "g3", "name": "niveau",         "value": "={{ $('Préparer les données').item.json.niveau }}",         "type": "string" },
-            { "id": "g4", "name": "semaineDu",      "value": "={{ $('Préparer les données').item.json.semaineDu }}",      "type": "string" },
-            { "id": "g5", "name": "semaineAu",      "value": "={{ $('Préparer les données').item.json.semaineAu }}",      "type": "string" },
-            { "id": "g6", "name": "destinataires",  "value": "={{ $('Préparer les données').item.json.destinataires }}",  "type": "array" },
-            { "id": "g7", "name": "creneaux",       "value": "={{ $json.creneauxOptimises ?? $('Préparer les données').item.json.creneaux }}", "type": "array" },
-            { "id": "g8", "name": "suggestions",    "value": "={{ $json.suggestions ?? '' }}", "type": "string" },
-            { "id": "g9", "name": "iaActive",       "value": "={{ $json.iaActive ?? false }}", "type": "boolean" },
-            { "id": "g10", "name": "edtTemplate",   "value": "={{ $json.edtTemplate ?? null }}", "type": "object" },
-            { "id": "g11", "name": "introIA",       "value": "={{ $('Préparer les données').item.json.introIA }}", "type": "string" }
+            {
+              "id": "g1",
+              "name": "emploiDuTempsId",
+              "value": "={{ $('Préparer les données').item.json.emploiDuTempsId }}",
+              "type": "number"
+            },
+            {
+              "id": "g2",
+              "name": "filiere",
+              "value": "={{ $('Préparer les données').item.json.filiere }}",
+              "type": "string"
+            },
+            {
+              "id": "g3",
+              "name": "niveau",
+              "value": "={{ $('Préparer les données').item.json.niveau }}",
+              "type": "string"
+            },
+            {
+              "id": "g4",
+              "name": "semaineDu",
+              "value": "={{ $('Préparer les données').item.json.semaineDu }}",
+              "type": "string"
+            },
+            {
+              "id": "g5",
+              "name": "semaineAu",
+              "value": "={{ $('Préparer les données').item.json.semaineAu }}",
+              "type": "string"
+            },
+            {
+              "id": "g6",
+              "name": "destinataires",
+              "value": "={{ $('Préparer les données').item.json.destinataires }}",
+              "type": "array"
+            },
+            {
+              "id": "g7",
+              "name": "creneaux",
+              "value": "={{ $json.creneauxOptimises ?? $('Préparer les données').item.json.creneaux }}",
+              "type": "array"
+            },
+            {
+              "id": "g8",
+              "name": "suggestions",
+              "value": "={{ $json.suggestions ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "g9",
+              "name": "iaActive",
+              "value": "={{ $json.iaActive ?? false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "g10",
+              "name": "edtTemplate",
+              "value": "={{ $json.edtTemplate ?? null }}",
+              "type": "object"
+            }
           ]
         },
         "options": {}
       },
-      "id": "fusion",
+      "id": "7ca70215-9474-4a79-91ba-108016c241a5",
       "name": "Fusion réponse IA",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [780, 360]
+      "position": [
+        608,
+        0
+      ]
     },
     {
       "parameters": {
-        "language": "javaScript",
-        "jsCode": "const data = $input.first().json;\nconst t = data.edtTemplate || {};\n\nfunction esc(v){\n  return String(v ?? '')\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\"', '&quot;')\n    .replaceAll(\"'\", '&#39;');\n}\n\nconst colonnes = Array.isArray(t.colonnes) && t.colonnes.length === 6\n  ? t.colonnes\n  : ['Heures','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];\nconst lignes = Array.isArray(t.lignes) ? t.lignes : [];\nconst separateurs = new Set(Array.isArray(t.separateurs) ? t.separateurs : [2]);\n\nfunction renderCell(cell){\n  if (!cell || cell.type === 'skip') return '';\n  const rowSpan = Math.max(1, Number(cell.rowSpan || 1));\n  if (cell.type === 'empty') {\n    return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;min-height:68px;height:68px;\"></td>`;\n  }\n  const module = esc(cell.module || cell.matiere || '');\n  const salle = esc(cell.salle || '');\n  const professeur = esc(cell.professeur || '');\n  return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;padding:6px;vertical-align:top;min-height:68px;\">\n    <span style=\"background:#FFF59D;font-weight:700;font-size:11px;display:block;padding:2px 4px;\">${module}</span>\n    <span style=\"background:#FFF59D;font-size:11px;display:block;padding:2px 4px;\">${salle ? 'Salle ' + salle : ''}</span>\n    <span style=\"font-size:11px;display:block;margin-top:2px;\">${professeur}</span>\n  </td>`;\n}\n\nconst thead = `<tr>${colonnes.map((c, i) => `<th style=\"border:1px solid #000;padding:5px;font-size:11px;text-align:${i===0?'center':'left'};${i===0?'width:65px;':''}\">${esc(c)}</th>`).join('')}</tr>`;\n\nconst bodyRows = [];\nfor (let i = 0; i < lignes.length; i++) {\n  if (separateurs.has(i)) {\n    bodyRows.push('<tr><td colspan=\"6\" style=\"background:#4472C4;height:14px;border:none;\"></td></tr>');\n  }\n  const ligne = lignes[i] || {};\n  const cells = Array.isArray(ligne.cells) ? ligne.cells : [];\n  bodyRows.push(`<tr><td style=\"border:1px solid #000;color:#C00000;font-weight:700;font-size:11px;text-align:center;vertical-align:middle;\">${esc(ligne.heureLabel || '')}</td>${cells.map(renderCell).join('')}</tr>`);\n}\n\nconst introBanner = data.introIA\n  ? `<div style=\"background:#F0F9FF;border-left:4px solid #0EA5E9;padding:12px 16px;margin-bottom:16px;border-radius:0 6px 6px 0;\"><p style=\"color:#0C4A6E;font-size:13px;margin:0;line-height:1.5;font-style:italic;\">${esc(data.introIA)}</p><p style=\"color:#0EA5E9;font-size:10px;margin:6px 0 0;\">— Message personnalise genere par Gemini 3 Flash</p></div>`\n  : '';\n\nconst iaBanner = data.iaActive && data.suggestions\n  ? `<div style=\"background:#EEF2FF;border-left:4px solid #4338CA;padding:10px 14px;margin-bottom:16px;border-radius:0 6px 6px 0;\"><strong style=\"color:#4338CA;font-size:12px;\">Optimise par Gemini 3 Flash</strong><p style=\"color:#374151;font-size:11px;margin:4px 0 0;\">${esc(data.suggestions)}</p></div>`\n  : '';\n\nconst html = `<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;padding:28px;background:#fff;color:#000;}table{border-collapse:collapse;width:100%;}</style></head><body>\n<div style=\"margin-bottom:20px;\"><img src=\"https://frontend-angular-planning.vercel.app/isd-logo.svg\" alt=\"Institut Superieur du Digital\" style=\"height:64px;width:auto;display:block;\"></div>\n${introBanner}\n${iaBanner}\n<div style=\"text-align:center;font-weight:bold;font-size:15px;text-decoration:underline;text-transform:uppercase;margin-bottom:5px;\">${esc(t.titre || '')}</div>\n<div style=\"text-align:center;font-size:13px;text-decoration:underline;text-transform:uppercase;margin-bottom:18px;\">${esc(t.sousTitre || '')}</div>\n<table><thead>${thead}</thead><tbody>${bodyRows.join('')}</tbody></table>\n<p style=\"color:#C00000;font-style:italic;font-weight:bold;text-decoration:underline;margin-top:18px;font-size:12px;\">${esc(t.noteBasPage || \"NB : L'emploi du temps n'est pas definitif. Il peut toujours subir des modifications.\")}</p>\n</body></html>`;\n\nreturn [{ json: { ...data, htmlEmail: html } }];"
+        "jsCode": "const data = $input.first().json;\nconst t = data.edtTemplate || {};\n\nfunction esc(v){\n  return String(v ?? '')\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\"', '&quot;')\n    .replaceAll(\"'\", '&#39;');\n}\n\nconst colonnes = Array.isArray(t.colonnes) && t.colonnes.length === 6\n  ? t.colonnes\n  : ['Heures','Lundi','Mardi','Mercredi','Jeudi','Vendredi'];\nconst lignes = Array.isArray(t.lignes) ? t.lignes : [];\nconst separateurs = new Set(Array.isArray(t.separateurs) ? t.separateurs : [2]);\n\nfunction renderCell(cell){\n  if (!cell || cell.type === 'skip') return '';\n  const rowSpan = Math.max(1, Number(cell.rowSpan || 1));\n  if (cell.type === 'empty') {\n    return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;min-height:68px;height:68px;\"></td>`;\n  }\n  const module = esc(cell.module || cell.matiere || '');\n  const salle = esc(cell.salle || '');\n  const professeur = esc(cell.professeur || '');\n  return `<td rowspan=\"${rowSpan}\" style=\"border:1px solid #000;padding:6px;vertical-align:top;min-height:68px;\">\n    <span style=\"background:#FFF59D;font-weight:700;font-size:11px;display:block;padding:2px 4px;\">${module}</span>\n    <span style=\"background:#FFF59D;font-size:11px;display:block;padding:2px 4px;\">${salle ? 'Salle ' + salle : ''}</span>\n    <span style=\"font-size:11px;display:block;margin-top:2px;\">${professeur}</span>\n  </td>`;\n}\n\nconst thead = `<tr>${colonnes.map((c, i) => `<th style=\"border:1px solid #000;padding:5px;font-size:11px;text-align:${i===0?'center':'left'};${i===0?'width:65px;':''}\">${esc(c)}</th>`).join('')}</tr>`;\n\nconst bodyRows = [];\nfor (let i = 0; i < lignes.length; i++) {\n  if (separateurs.has(i)) {\n    bodyRows.push('<tr><td colspan=\"6\" style=\"background:#4472C4;height:14px;border:none;\"></td></tr>');\n  }\n  const ligne = lignes[i] || {};\n  const cells = Array.isArray(ligne.cells) ? ligne.cells : [];\n  bodyRows.push(`<tr><td style=\"border:1px solid #000;color:#C00000;font-weight:700;font-size:11px;text-align:center;vertical-align:middle;\">${esc(ligne.heureLabel || '')}</td>${cells.map(renderCell).join('')}</tr>`);\n}\n\nconst iaBanner = data.iaActive && data.suggestions\n  ? `<div style=\"background:#EEF2FF;border-left:4px solid #4338CA;padding:10px 14px;margin-bottom:16px;border-radius:0 6px 6px 0;\"><strong style=\"color:#4338CA;font-size:12px;\">🤖 Optimisé par Gemini 2.5 Flash</strong><p style=\"color:#374151;font-size:11px;margin:4px 0 0;\">${esc(data.suggestions)}</p></div>`\n  : '';\n\nconst html = `<!DOCTYPE html><html><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;padding:28px;background:#fff;color:#000;}table{border-collapse:collapse;width:100%;}</style></head><body>\n<div style=\"display:flex;align-items:flex-start;margin-bottom:20px;\"><div style=\"border:2px solid #1E3A5F;padding:8px 12px;border-radius:6px;\"><div style=\"font-weight:900;font-size:12px;color:#1E3A5F;line-height:1.5;\">Institut<br>Supérieur<br><span style=\"text-decoration:underline;\">du Digital</span></div></div></div>\n${iaBanner}\n<div style=\"text-align:center;font-weight:bold;font-size:15px;text-decoration:underline;text-transform:uppercase;margin-bottom:5px;\">${esc(t.titre || '')}</div>\n<div style=\"text-align:center;font-size:13px;text-decoration:underline;text-transform:uppercase;margin-bottom:18px;\">${esc(t.sousTitre || '')}</div>\n<table><thead>${thead}</thead><tbody>${bodyRows.join('')}</tbody></table>\n<p style=\"color:#C00000;font-style:italic;font-weight:bold;text-decoration:underline;margin-top:18px;font-size:12px;\">${esc(t.noteBasPage || \"NB : L'emploi du temps n'est pas définitif. Il peut toujours subir des modifications.\")}</p>\n</body></html>`;\n\nreturn [{ json: { ...data, htmlEmail: html } }];"
       },
-      "id": "generer-html",
+      "id": "eeb47595-988c-4350-92cc-c67f36c89b2a",
       "name": "Générer HTML — Style ISD",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [980, 360]
-    },
-    {
-      "parameters": { "fieldToSplitOut": "destinataires", "options": {} },
-      "id": "split-dest",
-      "name": "Split par destinataire",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [1180, 360]
+      "position": [
+        800,
+        0
+      ]
     },
     {
       "parameters": {
-        "url": "https://api.mailjet.com/v3.1/send",
+        "fieldToSplitOut": "destinataires",
+        "options": {}
+      },
+      "id": "9a7d6e2b-771a-49ac-a19d-e144860b2e85",
+      "name": "Split par destinataire",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        0
+      ]
+    },
+    {
+      "parameters": {
         "method": "POST",
+        "url": "https://api.mailjet.com/v3.1/send",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Basic YOUR_BASE64_API_KEY_SECRET" },
-            { "name": "Content-Type",  "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "Basic M2M5OWFhYTBiODY4MWJiNzk2YmY0ZWY0Y2MyNGMwNDA6OWNjYmQ4ZGU0YTA0ODBmNGIyMjU1YmQ3OTZjYTQ5NmY="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
-        "contentType": "json",
-        "body": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'Institut Superieur du Digital' }, To: [{ Email: $json.destinataires }], Subject: 'Emploi du temps - ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' - Semaine du ' + $('Préparer les données').item.json.semaineDu, Headers: { 'Reply-To': 'yohanntoure40@gmail.com', 'List-Unsubscribe': '<mailto:yohanntoure40@gmail.com?subject=Desinscription>' }, TextPart: \"Bonjour,\\n\\nVeuillez trouver ci-joint votre emploi du temps pour la semaine du \" + $('Préparer les données').item.json.semaineDu + \" au \" + $('Préparer les données').item.json.semaineAu + \".\\n\\nFiliere : \" + $('Préparer les données').item.json.filiere + \"\\nNiveau : \" + $('Préparer les données').item.json.niveau + \"\\n\\nPour toute question, contactez le secretariat.\\n\\nCordialement,\\nLe secretariat de l'Institut Superieur du Digital\\n\\n--\\nPour vous desinscrire : repondez a ce mail avec 'Desinscription'.\", HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
-        "options": { "timeout": 30000 }
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduSchedule ISD' }, To: [{ Email: $json.destinataires }], Subject: 'EDT — ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' — Semaine du ' + $('Préparer les données').item.json.semaineDu, HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
+        "options": {
+          "timeout": 30000
+        }
       },
-      "id": "envoyer-edt",
-      "name": "Envoyer EDT (Mailjet)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1380, 360],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "e2fe2f46-0a3e-4cf7-99d3-d356dacad75a",
+      "name": "Envoyer EDT (Mailjet)",
+      "webhookId": "0d348f92-011d-4e09-b2c5-eddd1577aafc",
       "onError": "continueRegularOutput"
     }
   ],
+  "pinData": {},
   "connections": {
-    "Webhook — Réception EDT":        { "main": [[{ "node": "Préparer les données", "type": "main", "index": 0 }]] },
-    "Préparer les données":           { "main": [[{ "node": "Gemini 3 Flash (via backend)", "type": "main", "index": 0 }]] },
-    "Gemini 3 Flash (via backend)": { "main": [[{ "node": "Fusion réponse IA",      "type": "main", "index": 0 }]] },
-    "Fusion réponse IA":              { "main": [[{ "node": "Générer HTML — Style ISD", "type": "main", "index": 0 }]] },
-    "Générer HTML — Style ISD":       { "main": [[{ "node": "Split par destinataire",   "type": "main", "index": 0 }]] },
-    "Split par destinataire":         { "main": [[{ "node": "Envoyer EDT (Mailjet)",     "type": "main", "index": 0 }]] }
+    "Webhook — Réception EDT": {
+      "main": [
+        [
+          {
+            "node": "Préparer les données",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer les données": {
+      "main": [
+        [
+          {
+            "node": "Gemini 3 Flash (via backend)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fusion réponse IA": {
+      "main": [
+        [
+          {
+            "node": "Générer HTML — Style ISD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Générer HTML — Style ISD": {
+      "main": [
+        [
+          {
+            "node": "Split par destinataire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split par destinataire": {
+      "main": [
+        [
+          {
+            "node": "Envoyer EDT (Mailjet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 3 Flash (via backend)": {
+      "main": [
+        [
+          {
+            "node": "Fusion réponse IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "tags": [{ "name": "eduschedule" }, { "name": "edt" }, { "name": "gemini-ia" }, { "name": "mailjet" }]
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "e1adb87f-c765-4e3e-94d3-3e85919b4de6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b07102cdd0df67a06f9de59b5590c41c1396c825a28193d0fa0bd40efde00b24"
+  },
+  "id": "tCd6r1wjXTLmZdwP",
+  "tags": [
+    {
+      "updatedAt": "2026-04-24T02:53:56.523Z",
+      "createdAt": "2026-04-24T02:53:56.523Z",
+      "id": "3y8xG9gRfzkGxoS2",
+      "name": "eduschedule"
+    },
+    {
+      "updatedAt": "2026-04-24T03:09:57.167Z",
+      "createdAt": "2026-04-24T03:09:57.167Z",
+      "id": "8vfiBz0KlPjRqjqZ",
+      "name": "edt"
+    },
+    {
+      "updatedAt": "2026-04-29T17:58:31.008Z",
+      "createdAt": "2026-04-29T17:58:31.008Z",
+      "id": "mIYAUjI4etXCenpN",
+      "name": "gemini-ia"
+    }
+  ]
 }

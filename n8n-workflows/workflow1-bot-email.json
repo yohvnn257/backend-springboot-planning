@@ -4,106 +4,254 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "field": "weeks", "weeksInterval": 1, "triggerAtDay": [1], "triggerAtHour": 7, "triggerAtMinute": 0 }]
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 7
+            }
+          ]
         }
       },
-      "id": "cron-lundi",
+      "id": "6a520858-c72c-456d-a347-df3d1f39659b",
       "name": "Cron — Lundi 7h00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [180, 260]
+      "position": [
+        -688,
+        32
+      ]
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "email-trigger",
-        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "webhook-dashboard",
+      "id": "8c478cdb-8c90-4343-91b1-a7749a8d25b9",
       "name": "Webhook — Dashboard",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [180, 460]
+      "position": [
+        -688,
+        224
+      ],
+      "webhookId": "b015980e-00ea-481f-9c53-2ce41b203dcf"
     },
     {
       "parameters": {
-        "url": "https://backend-springboot-planning.onrender.com/api/webhook/preparer-envoi",
         "method": "POST",
+        "url": "https://backend-springboot-planning.onrender.com/api/webhook/preparer-envoi",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={}",
-        "options": { "timeout": 60000 }
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "timeout": 90000
+        }
       },
-      "id": "preparer-envoi",
+      "id": "441a87eb-2eb4-465a-b472-839dc60e5f93",
       "name": "Préparer envoi (Render)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [420, 360]
+      "position": [
+        -448,
+        128
+      ]
     },
     {
       "parameters": {
-        "fieldToSplitOut": "professeurs",
+        "jsCode": "const data = $input.first().json;\nconst profs = data.professeurs || data.body?.professeurs || [];\nif (!profs.length) throw new Error('Aucun professeur — vérifiez que Render est actif');\nconsole.log(`${profs.length} prof(s) récupéré(s) depuis Neon via Render`);\nreturn profs.map(p => ({ json: p }));"
+      },
+      "id": "dd23ebc9-c0b4-41bc-a82f-14bc69b1ac5b",
+      "name": "Extraire professeurs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "from": "=+14155238886",
+        "to": "={{ $json.telephone }}",
+        "toWhatsapp": true,
+        "message": "=Bonjour monsieur vous venez de recevoir l'email pour les créneaux",
         "options": {}
       },
-      "id": "split-profs",
-      "name": "Split par professeur",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [640, 360]
-    },
-    {
-      "parameters": {
-        "sendTo": "={{ $json.email }}",
-        "subject": "=📅 EduSchedule — Vos disponibilités — semaine prochaine",
-        "emailType": "html",
-        "message": "=<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='font-family:Arial,sans-serif;background:#F1F5F9;padding:24px;'><div style='max-width:520px;margin:0 auto;'><div style='background:#1E1B4B;padding:20px;border-radius:12px 12px 0 0;text-align:center;'><h1 style='color:white;margin:0;font-size:20px;'>📅 EduSchedule</h1><p style='color:#A5B4FC;margin:4px 0 0;font-size:12px;'>Institut Supérieur du Digital</p></div><div style='background:white;padding:24px;border-radius:0 0 12px 12px;'><p style='color:#1F2937;'>Bonjour <strong>{{ $json.nom }}</strong> 👋</p><p style='color:#4B5563;'>Merci de saisir vos <strong>disponibilités pour la semaine prochaine</strong>.</p><p style='color:#4B5563;'>Modules : <strong>{{ $json.modules ? $json.modules.join(', ') : $json.matiere }}</strong></p><div style='text-align:center;margin:28px 0;'><a href='{{ $json.lienReponse }}' style='background:#4338CA;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;'>✏️ Saisir mes disponibilités</a></div><p style='color:#9CA3AF;font-size:11px;text-align:center;'>Lien personnel valide 7 jours — ne pas partager.</p></div></div></body></html>",
-        "options": {}
-      },
-      "id": "envoyer-email",
-      "name": "Envoyer Email",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [860, 240]
-    },
-    {
-      "parameters": {
-        "operation": "sendMessage",
-        "from": "whatsapp:+14155238886",
-        "to": "=whatsapp:+{{ $json.telephone ? $json.telephone.replace(/[^0-9]/g, '') : '' }}",
-        "message": "=📅 *EduSchedule — ISD*\n\nBonjour *{{ $json.nom }}* 👋\n\nVeuillez saisir vos disponibilités pour la semaine prochaine.\n\n📚 *Modules :* {{ $json.modules ? $json.modules.join(', ') : $json.matiere }}\n\n🔗 {{ $json.lienReponse }}\n\n_Lien valide 7 jours — Institut Supérieur du Digital_"
-      },
-      "id": "twilio-whatsapp",
+      "id": "387627f9-4d25-4920-9861-1bce1eef30de",
       "name": "WhatsApp Twilio",
       "type": "n8n-nodes-base.twilio",
       "typeVersion": 1,
-      "position": [860, 480],
-      "credentials": { "twilioApi": { "id": "twilio-cred", "name": "Twilio Sandbox" } }
+      "position": [
+        0,
+        240
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "vJhlRJvtmTzf5zRj",
+          "name": "Twilio account"
+        }
+      }
     },
     {
       "parameters": {
-        "url": "=https://backend-springboot-planning.onrender.com/api/professeurs/{{ $json.id }}/whatsapp-statut",
         "method": "PATCH",
+        "url": "=https://backend-springboot-planning.onrender.com/api/professeurs/{{ $('Extraire professeurs').item.json.id }}/whatsapp-statut",
         "sendBody": true,
-        "contentType": "json",
-        "body": "={\"statut\": \"ENVOYE\"}",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "statut",
+              "value": "ENVOYE"
+            }
+          ]
+        },
         "options": {}
       },
-      "id": "marquer-envoye",
+      "id": "e8f0cdb8-5656-4042-95e3-4f4e82f8620f",
       "name": "Marquer ENVOYE (Render)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1080, 360]
+      "position": [
+        224,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mailjet.com/v3.1/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic M2M5OWFhYTBiODY4MWJiNzk2YmY0ZWY0Y2MyNGMwNDA6OWNjYmQ4ZGU0YTA0ODBmNGIyMjU1YmQ3OTZjYTQ5NmY="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduSchedule ISD' }, To: [{ Email: $('Extraire professeurs').item.json.email, Name: $('Extraire professeurs').item.json.nom }], Subject: 'EduSchedule — Vos disponibilités — semaine prochaine', HTMLPart: \"<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'><div style='background:linear-gradient(135deg,#1E1B4B,#4338CA);padding:24px;border-radius:12px 12px 0 0;'><h1 style='color:white;margin:0;font-size:22px;'>EduSchedule</h1></div><div style='background:white;padding:28px;'><p>Bonjour <strong>\" + $('Extraire professeurs').item.json.nom + \"</strong></p><p>Modules : <strong>\" + ($('Extraire professeurs').item.json.modules ? $('Extraire professeurs').item.json.modules.join(', ') : $('Extraire professeurs').item.json.matiere) + \"</strong></p><div style='text-align:center;margin:28px 0;'><a href='\" + $('Extraire professeurs').item.json.lienReponse + \"' style='background:#4338CA;color:white;padding:16px 36px;border-radius:10px;text-decoration:none;'>Indiquer mes disponibilités</a></div></div></div>\" }] }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        0
+      ],
+      "id": "b9c034f5-1a81-4643-bf7d-9a8b2aa2a3b7",
+      "name": "Envoyer Email (Mailjet)",
+      "onError": "continueRegularOutput"
     }
   ],
+  "pinData": {},
   "connections": {
-    "Cron — Lundi 7h00":     { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
-    "Webhook — Dashboard":   { "main": [[{ "node": "Préparer envoi (Render)", "type": "main", "index": 0 }]] },
-    "Préparer envoi (Render)": { "main": [[{ "node": "Split par professeur", "type": "main", "index": 0 }]] },
-    "Split par professeur":  { "main": [[{ "node": "Envoyer Email", "type": "main", "index": 0 }]] },
-    "Envoyer Email":         { "main": [[{ "node": "WhatsApp Twilio", "type": "main", "index": 0 }]] },
-    "WhatsApp Twilio":       { "main": [[{ "node": "Marquer ENVOYE (Render)", "type": "main", "index": 0 }]] }
+    "Cron — Lundi 7h00": {
+      "main": [
+        [
+          {
+            "node": "Préparer envoi (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Préparer envoi (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraire professeurs": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Twilio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Envoyer Email (Mailjet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer envoi (Render)": {
+      "main": [
+        [
+          {
+            "node": "Extraire professeurs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer Email (Mailjet)": {
+      "main": [
+        [
+          {
+            "node": "Marquer ENVOYE (Render)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true },
-  "tags": [{ "name": "eduschedule" }, { "name": "email" }, { "name": "whatsapp" }]
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "692edf4e-8ed4-44b3-8ed1-6ea2aabf3620",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b07102cdd0df67a06f9de59b5590c41c1396c825a28193d0fa0bd40efde00b24"
+  },
+  "id": "Tj47tivnKJ1Zzj3w",
+  "tags": [
+    {
+      "updatedAt": "2026-04-24T02:53:56.529Z",
+      "createdAt": "2026-04-24T02:53:56.529Z",
+      "id": "08CCsCQhmCHOfsH6",
+      "name": "email"
+    },
+    {
+      "updatedAt": "2026-04-24T02:53:56.523Z",
+      "createdAt": "2026-04-24T02:53:56.523Z",
+      "id": "3y8xG9gRfzkGxoS2",
+      "name": "eduschedule"
+    },
+    {
+      "updatedAt": "2026-04-24T02:53:56.516Z",
+      "createdAt": "2026-04-24T02:53:56.516Z",
+      "id": "lSWKHjQUXLmsV2Zy",
+      "name": "whatsapp"
+    }
+  ]
 }
