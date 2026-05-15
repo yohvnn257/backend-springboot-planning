@@ -44,13 +44,23 @@ public class EmailService {
     }
 
     // Étape 1 : sauvegarde DB (transaction courte). Public pour appel direct depuis n8n.
+    // Token idempotent : ne régénère que si manquant, expiré, ou si le prof a déjà répondu.
+    // Évite d'invalider les liens déjà envoyés en cas de double-clic ou de double-appel
+    // (trigger-bot puis /preparer-envoi via n8n).
     @Transactional
     public List<Map<String,Object>> preparerTokens() {
         List<Professeur> profs = profRepo.findAll();
+        LocalDateTime now = LocalDateTime.now();
         profs.forEach(p->{
+            boolean tokenInvalide = p.getResponseToken()==null
+                || p.getTokenExpireAt()==null
+                || p.getTokenExpireAt().isBefore(now)
+                || "REPONDU".equals(p.getWhatsappStatut());
+            if (tokenInvalide) {
+                p.setResponseToken(UUID.randomUUID().toString().replace("-",""));
+                p.setTokenExpireAt(now.plusDays(7));
+            }
             p.setWhatsappStatut("ATTENTE");
-            p.setResponseToken(UUID.randomUUID().toString().replace("-",""));
-            p.setTokenExpireAt(LocalDateTime.now().plusDays(7));
         });
         profRepo.saveAll(profs);
         return profs.stream().filter(p->p.getEmail()!=null&&!p.getEmail().isBlank()).map(p->{
