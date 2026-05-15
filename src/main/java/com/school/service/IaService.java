@@ -132,7 +132,9 @@ public class IaService {
                 throw ex;
             }
         }
-        List<Map<String,Object>> candidates = (List<Map<String,Object>>) resp.getBody().get("candidates");
+        Map respBody = resp.getBody();
+        if (respBody == null) throw new RuntimeException("Réponse Gemini sans corps");
+        List<Map<String,Object>> candidates = (List<Map<String,Object>>) respBody.get("candidates");
         if (candidates == null || candidates.isEmpty())
             throw new RuntimeException("Réponse Gemini vide");
         // Si Gemini a coupe la reponse, finishReason = "MAX_TOKENS" -> on logge

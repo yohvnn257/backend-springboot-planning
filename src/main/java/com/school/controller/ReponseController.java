@@ -5,6 +5,7 @@ import com.school.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -32,10 +33,15 @@ public class ReponseController {
     }
 
     @PostMapping("/soumettre/{token}")
+    @Transactional
     public ResponseEntity<Map<String,Object>> soumettre(@PathVariable String token,@RequestBody Map<String,Object> payload){
         Optional<Professeur> opt=profRepo.findByResponseToken(token);
         if(opt.isEmpty()) return ResponseEntity.status(404).body(Map.of("succes",false,"message","Token invalide"));
         Professeur prof=opt.get();
+        // Bloque la double-soumission (refresh, double-clic) : evite les doublons de dispos.
+        // L'utilisateur doit demander un nouveau lien a la secretaire s'il veut modifier.
+        if("REPONDU".equals(prof.getWhatsappStatut()))
+            return ResponseEntity.status(410).body(Map.of("succes",false,"message","Ce lien a déjà été utilisé."));
         @SuppressWarnings("unchecked") List<Map<String,Object>> creneaux=(List<Map<String,Object>>)payload.get("creneaux");
         if(creneaux==null||creneaux.isEmpty()) return ResponseEntity.badRequest().body(Map.of("succes",false));
         List<Disponibilite> list=new ArrayList<>();
