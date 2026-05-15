@@ -4,6 +4,8 @@ import com.school.dto.request.LoginRequest;
 import com.school.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -20,10 +22,10 @@ public class AuthController {
 
     @PostMapping("/change-password")
     public ResponseEntity<Map<String,Object>> changePassword(@RequestBody ChangePasswordRequest req) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String username = principal != null ? principal.toString() : null;
-        if (username == null || username.isBlank())
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken)
             return ResponseEntity.status(401).body(Map.of("succes", false, "message", "Non authentifie."));
+        String username = auth.getName();
         Map<String,Object> r = authService.changePassword(username, req.getCurrentPassword(), req.getNewPassword());
         return Boolean.TRUE.equals(r.get("succes")) ? ResponseEntity.ok(r) : ResponseEntity.badRequest().body(r);
     }
