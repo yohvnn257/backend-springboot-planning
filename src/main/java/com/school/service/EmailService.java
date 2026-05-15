@@ -21,6 +21,11 @@ public class EmailService {
     @Value("${n8n.email.trigger.url}") private String n8nUrl;
     @Value("${app.frontend.url}") private String frontendUrl;
 
+    /** Supprime les slashes finaux pour eviter les URLs avec // (cas APP_FRONTEND_URL avec / final). */
+    private String frontendUrlNormalise() {
+        return frontendUrl == null ? "" : frontendUrl.replaceAll("/+$", "");
+    }
+
     @Transactional(readOnly=true)
     public List<Map<String,Object>> getProfesseursStatuts() {
         return profRepo.findAll().stream().filter(p->p.getEmail()!=null&&!p.getEmail().isBlank()).map(p->{
@@ -32,7 +37,7 @@ public class EmailService {
             m.put("telephone", normaliserTelephone(p.getTelephone()));
             m.put("lienReponse",
                 p.getResponseToken() != null
-                ? frontendUrl + "/repondre/" + p.getResponseToken()
+                ? frontendUrlNormalise() + "/repondre/" + p.getResponseToken()
                 : null
             );
             m.put("modules",moduleRepo.findNomsByProfesseurId(p.getId()));
@@ -70,7 +75,7 @@ public class EmailService {
             m.put("matiere", mods.isEmpty() ? "(aucun module assigné)" : String.join(", ", mods));
             m.put("modules",mods); m.put("email",p.getEmail());
             m.put("telephone",p.getTelephone());
-            m.put("lienReponse",frontendUrl+"/repondre/"+p.getResponseToken());
+            m.put("lienReponse",frontendUrlNormalise()+"/repondre/"+p.getResponseToken());
             return m;
         }).toList();
     }
