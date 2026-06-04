@@ -27,7 +27,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Endpoints publics
                 .requestMatchers(
-                    "/api/auth/**",          // login + default-password-info (change-password protege par filtre)
+                    "/api/auth/**",          // login + default-password-info (mot de passe modifiable uniquement en base)
                     "/api/reponse/**",       // soumission des dispos par les profs via lien email
                     "/api/webhook/**",       // n8n callbacks (limitation acceptee, documentee)
                     "/actuator/**",          // healthcheck Render + UptimeRobot

@@ -19,9 +19,9 @@ public class DefaultUserSeeder implements CommandLineRunner {
         Utilisateur u = Utilisateur.builder()
             .username("secretaire")
             .passwordHash(encoder.encode("secretaire2026"))
-            .mustChangePassword(true)
+            .mustChangePassword(false)
             .build();
         repo.save(u);
-        log.info("Utilisateur par defaut cree : secretaire / secretaire2026 (must_change_password=true)");
+        log.info("Utilisateur par defaut cree : secretaire / secretaire2026 (mot de passe modifiable uniquement en base)");
     }
 }

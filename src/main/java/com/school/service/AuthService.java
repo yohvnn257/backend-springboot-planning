@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -34,31 +33,17 @@ public class AuthService {
         return r;
     }
 
-    /** Change le mot de passe et passe must_change_password a false. */
-    @Transactional
-    public Map<String,Object> changePassword(String username, String currentPwd, String newPwd) {
-        Optional<Utilisateur> opt = utilisateurRepo.findByUsername(username);
-        if (opt.isEmpty()) return Map.of("succes", false, "message", "Utilisateur introuvable.");
-        Utilisateur u = opt.get();
-        if (!passwordEncoder.matches(currentPwd, u.getPasswordHash()))
-            return Map.of("succes", false, "message", "Mot de passe actuel incorrect.");
-        if (newPwd == null || newPwd.length() < 8)
-            return Map.of("succes", false, "message", "Le nouveau mot de passe doit faire au moins 8 caracteres.");
-        u.setPasswordHash(passwordEncoder.encode(newPwd));
-        u.setMustChangePassword(false);
-        utilisateurRepo.save(u);
-        log.info("Mot de passe change pour username={}", username);
-        return Map.of("succes", true, "message", "Mot de passe mis a jour.");
-    }
-
-    /** Indique si le compte par defaut existe et utilise encore son mot de passe d'origine. */
+    /**
+     * Identifiants de connexion affiches sur la page de login.
+     * Le mot de passe est FIXE et ne se change qu'en base (table utilisateurs) :
+     * il n'existe volontairement plus d'endpoint pour le modifier via l'application.
+     * NB : si tu changes le hash en base, mets aussi a jour la constante ci-dessous.
+     */
     public Map<String,Object> defaultPasswordInfo() {
-        Optional<Utilisateur> opt = utilisateurRepo.findByUsername("secretaire");
-        boolean mustChange = opt.map(Utilisateur::getMustChangePassword).orElse(false);
         Map<String,Object> r = new HashMap<>();
-        r.put("mustChange", mustChange);
-        r.put("defaultUsername", mustChange ? "secretaire" : null);
-        r.put("defaultPassword", mustChange ? "secretaire2026" : null);
+        r.put("mustChange", false);
+        r.put("defaultUsername", "secretaire");
+        r.put("defaultPassword", "secretaire2026");
         return r;
     }
 }
