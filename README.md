@@ -1,4 +1,4 @@
-# EduSchedule — Institut Supérieur du Digital
+# EduPlan — Institut Supérieur du Digital
 
 Plateforme de gestion intelligente d'emplois du temps universitaires, propulsée par Gemini IA et n8n.
 
@@ -19,7 +19,7 @@ Plateforme de gestion intelligente d'emplois du temps universitaires, propulsée
 
 ## Vue d'ensemble
 
-EduSchedule automatise le cycle complet de planification scolaire :
+EduPlan automatise le cycle complet de planification scolaire :
 
 1. **Collecte des disponibilités** — un bot envoie chaque lundi à 7h un email + WhatsApp à chaque professeur avec un lien sécurisé pour saisir ses créneaux.
 2. **Optimisation par IA** — Gemini (Google) analyse les disponibilités et génère un emploi du temps équilibré (max 2 cours/jour, préférence matinale).

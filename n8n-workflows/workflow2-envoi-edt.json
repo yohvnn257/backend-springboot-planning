@@ -1,5 +1,5 @@
 {
-  "name": "EduSchedule — 2. Envoi EDT (Gemini 3 Flash via backend)",
+  "name": "EduPlan — 2. Envoi EDT (Gemini 3 Flash via backend)",
   "nodes": [
     {
       "parameters": {
@@ -220,7 +220,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduSchedule ISD' }, To: [{ Email: $json.destinataires }], Subject: 'EDT — ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' — Semaine du ' + $('Préparer les données').item.json.semaineDu, HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
+        "jsonBody": "={{ JSON.stringify({ Messages: [{ From: { Email: 'yohanntoure40@gmail.com', Name: 'EduPlan ISD' }, To: [{ Email: $json.destinataires }], Subject: 'EDT — ' + $('Préparer les données').item.json.filiere + ' ' + $('Préparer les données').item.json.niveau + ' — Semaine du ' + $('Préparer les données').item.json.semaineDu, HTMLPart: $('Générer HTML — Style ISD').item.json.htmlEmail }] }) }}",
         "options": {
           "timeout": 30000
         }
