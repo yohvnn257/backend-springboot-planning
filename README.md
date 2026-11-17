@@ -12,7 +12,7 @@ Plateforme de gestion intelligente d'emplois du temps universitaires, propulsée
 - [Stack technique](#stack-technique)
 - [Architecture](#architecture)
 - [Démarrage rapide](#démarrage-rapide)
-- [Documentation](#documentation)
+- [Vidéo de démonstration](#vidéo-de-démonstration)
 - [Liens production](#liens-production)
 
 ---
@@ -36,7 +36,7 @@ EduPlan automatise le cycle complet de planification scolaire :
 | **Backend** | Spring Boot 3.4 (Java 21) | Render (Docker) |
 | **Base de données** | PostgreSQL | Neon |
 | **Orchestration NoCode** | n8n | n8n Cloud / self-host |
-| **IA** | Gemini 2.5 Flash (Google) | API |
+| **IA** | Gemini 3 Flash (preview, fallback 2.5 Flash via `GEMINI_MODEL`) | API |
 | **Notifications** | Gmail (n8n) + Twilio WhatsApp | API |
 
 ---
@@ -59,8 +59,6 @@ n8n (orchestrateur)  │
 ```
 
 **Principe** : Spring Boot porte toute la logique métier (DB, Gemini, validation). n8n n'est qu'un orchestrateur visuel — il appelle les endpoints REST du backend. Cette séparation respecte le pattern *LLM-as-Microservice* et garantit une seule source de vérité.
-
-→ Voir [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour le détail.
 
 ---
 
@@ -85,7 +83,8 @@ Variables d'environnement minimales (sinon valeurs par défaut dans `application
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/school_db
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
-GEMINI_API_KEY=sk-ant-...        # optionnel — sans clé, l'IA est désactivée proprement
+GEMINI_API_KEY=AIza...             # optionnel — clé Google AI Studio ; sans clé, l'IA est désactivée proprement
+APP_JWT_SECRET=...                 # recommandé — min. 32 caractères ; sans valeur, une clé aléatoire est générée à chaque démarrage
 N8N_WEBHOOK_URL=...                 # workflow 2 (envoi EDT)
 N8N_EMAIL_TRIGGER_URL=...           # workflow 1 (bot email)
 APP_FRONTEND_URL=http://localhost:4200
@@ -94,6 +93,8 @@ APP_FRONTEND_URL=http://localhost:4200
 API disponible sur `http://localhost:8080/api`. Doc Swagger : `http://localhost:8080/swagger-ui.html`.
 
 ### Frontend
+
+Le frontend est un dépôt séparé (`frontend-angular-planning`, déployé sur Vercel) :
 
 ```bash
 cd frontend-angular-planning
@@ -113,18 +114,9 @@ Application accessible sur `http://localhost:4200`.
 
 ---
 
-## Documentation
+## Vidéo de démonstration
 
-| Bloc RNCP | Document | Description |
-|---|---|---|
-| 1. Cadrage | [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md) | Objectifs, périmètre, livrables, processus métier |
-| 2. Build | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Conception technique, choix d'architecture, modèle de données |
-| 3. Live | [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md) | Mise en production, CI, monitoring |
-| 4. Maintenance | [docs/MAINTENANCE.md](docs/MAINTENANCE.md) | Système de tickets, procédures, évolutions |
-| 5. Onboarding | [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) | Tutoriel pas-à-pas pour les utilisateurs finaux |
-| Démo | [docs/SCRIPT_DEMO_VIDEO.md](docs/SCRIPT_DEMO_VIDEO.md) | Script de la vidéo de présentation |
-| 🎥 **Vidéo de démonstration** | **[VIDEO_DEMO_LINK_HERE](VIDEO_DEMO_LINK_HERE)** *(remplacer par lien Loom après tournage)* | Démo complète 6 minutes |
-| Évolutions | [docs/CHANGELOG.md](docs/CHANGELOG.md) | Journal des améliorations |
+🎥 **[VIDEO_DEMO_LINK_HERE](VIDEO_DEMO_LINK_HERE)** *(remplacer par le lien Loom après tournage)* — démo complète de 6 minutes.
 
 ---
 

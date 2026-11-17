@@ -18,5 +18,7 @@ services:
         sync: false
       - key: N8N_EMAIL_TRIGGER_URL
         sync: false
+      - key: APP_JWT_SECRET
+        generateValue: true
       - key: JAVA_TOOL_OPTIONS
         value: -Xmx400m
